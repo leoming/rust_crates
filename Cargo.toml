@@ -5,6 +5,7 @@ version = "0.0.1"
 edition = "2018"
 
 [dependencies]
+async-trait = "0.1.42"
 bindgen = "0.51"
 bytes = "1.0"
 cxx = { version = "0.5.9", features = ["c++17"] }
