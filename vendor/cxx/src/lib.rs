@@ -18,8 +18,15 @@
 //!
 //! <br>
 //!
-//! *Compiler support: requires rustc 1.43+ and c++11 or newer*<br>
+//! *Compiler support: requires rustc 1.48+ and c++11 or newer*<br>
 //! *[Release notes](https://github.com/dtolnay/cxx/releases)*
+//!
+//! <br>
+//!
+//! # Guide
+//!
+//! Please see **<https://cxx.rs>** for a tutorial, reference material, and
+//! example code.
 //!
 //! <br>
 //!
@@ -86,7 +93,7 @@
 //!         fn next_chunk(buf: &mut MultiBuf) -> &[u8];
 //!     }
 //!
-//!     extern "C++" {
+//!     unsafe extern "C++" {
 //!         // One or more headers with the matching C++ declarations. Our code
 //!         // generators don't read it but it gets #include'd and used in static
 //!         // assertions to ensure our picture of the FFI boundary is accurate.
@@ -235,7 +242,7 @@
 //! # Cargo.toml
 //!
 //! [build-dependencies]
-//! cxx-build = "0.5"
+//! cxx-build = "1.0"
 //! ```
 //!
 //! ```no_run
@@ -324,12 +331,16 @@
 //! <tr><th>name in Rust</th><th>name in C++</th><th>restrictions</th></tr>
 //! <tr><td>String</td><td>rust::String</td><td></td></tr>
 //! <tr><td>&amp;str</td><td>rust::Str</td><td></td></tr>
-//! <tr><td>&amp;[u8]</td><td>rust::Slice&lt;uint8_t&gt;</td><td><sup><i>arbitrary &amp;[T] not implemented yet</i></sup></td></tr>
+//! <tr><td>&amp;[T]</td><td>rust::Slice&lt;const T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
+//! <tr><td>&amp;mut [T]</td><td>rust::Slice&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
 //! <tr><td><a href="struct.CxxString.html">CxxString</a></td><td>std::string</td><td><sup><i>cannot be passed by value</i></sup></td></tr>
 //! <tr><td>Box&lt;T&gt;</td><td>rust::Box&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
 //! <tr><td><a href="struct.UniquePtr.html">UniquePtr&lt;T&gt;</a></td><td>std::unique_ptr&lt;T&gt;</td><td><sup><i>cannot hold opaque Rust type</i></sup></td></tr>
+//! <tr><td><a href="struct.SharedPtr.html">SharedPtr&lt;T&gt;</a></td><td>std::shared_ptr&lt;T&gt;</td><td><sup><i>cannot hold opaque Rust type</i></sup></td></tr>
+//! <tr><td>[T; N]</td><td>std::array&lt;T, N&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
 //! <tr><td>Vec&lt;T&gt;</td><td>rust::Vec&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
 //! <tr><td><a href="struct.CxxVector.html">CxxVector&lt;T&gt;</a></td><td>std::vector&lt;T&gt;</td><td><sup><i>cannot be passed by value, cannot hold opaque Rust type</i></sup></td></tr>
+//! <tr><td>*mut T, *const T</td><td>T*, const T*</td><td><sup><i>fn with a raw pointer argument must be declared unsafe to call</i></sup></td></tr>
 //! <tr><td>fn(T, U) -&gt; V</td><td>rust::Fn&lt;V(T, U)&gt;</td><td><sup><i>only passing from Rust to C++ is implemented so far</i></sup></td></tr>
 //! <tr><td>Result&lt;T&gt;</td><td>throw/catch</td><td><sup><i>allowed as return type only</i></sup></td></tr>
 //! </table>
@@ -350,64 +361,76 @@
 //! <tr><td>Option&lt;T&gt;</td><td><sup><i>tbd</i></sup></td></tr>
 //! <tr><td><sup><i>tbd</i></sup></td><td>std::map&lt;K, V&gt;</td></tr>
 //! <tr><td><sup><i>tbd</i></sup></td><td>std::unordered_map&lt;K, V&gt;</td></tr>
-//! <tr><td><sup><i>tbd</i></sup></td><td>std::shared_ptr&lt;T&gt;</td></tr>
 //! </table>
 
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/cxx/0.5.10")]
+#![doc(html_root_url = "https://docs.rs/cxx/1.0.42")]
 #![deny(improper_ctypes)]
 #![allow(non_camel_case_types)]
 #![allow(
     clippy::cognitive_complexity,
     clippy::declare_interior_mutable_const,
+    clippy::doc_markdown,
+    clippy::empty_enum,
     clippy::inherent_to_string,
+    clippy::items_after_statements,
     clippy::large_enum_variant,
     clippy::len_without_is_empty,
+    clippy::missing_errors_doc,
     clippy::missing_safety_doc,
     clippy::module_inception,
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
     clippy::needless_doctest_main,
     clippy::new_without_default,
     clippy::or_fun_call,
     clippy::ptr_arg,
     clippy::toplevel_ref_arg,
-    clippy::useless_let_if_seq
+    clippy::useless_let_if_seq,
+    clippy::wrong_self_convention
 )]
 
 #[cfg(built_with_cargo)]
 extern crate link_cplusplus;
 
 extern crate alloc;
+extern crate self as cxx;
 extern crate std;
 
 #[macro_use]
 mod macros;
 
-mod cxx_string;
 mod cxx_vector;
 mod exception;
 mod extern_type;
+mod fmt;
 mod function;
+pub mod memory;
 mod opaque;
 mod result;
-mod rust_sliceu8;
+mod rust_slice;
 mod rust_str;
 mod rust_string;
+mod rust_type;
 mod rust_vec;
+mod shared_ptr;
+#[path = "cxx_string.rs"]
+mod string;
 mod symbols;
+mod type_id;
 mod unique_ptr;
 mod unwind;
+pub mod vector;
+mod weak_ptr;
 
-pub use crate::cxx_string::CxxString;
 pub use crate::cxx_vector::CxxVector;
 pub use crate::exception::Exception;
 pub use crate::extern_type::{kind, ExternType};
+pub use crate::shared_ptr::SharedPtr;
+pub use crate::string::CxxString;
 pub use crate::unique_ptr::UniquePtr;
+pub use crate::weak_ptr::WeakPtr;
 pub use cxxbridge_macro::bridge;
-
-/// For use in impls of the `ExternType` trait. See [`ExternType`].
-///
-/// [`ExternType`]: trait.ExternType.html
-pub use cxxbridge_macro::type_id;
 
 /// Synonym for `CxxString`.
 ///
@@ -431,12 +454,21 @@ pub mod private {
     pub use crate::function::FatFunction;
     pub use crate::opaque::Opaque;
     pub use crate::result::{r#try, Result};
-    pub use crate::rust_sliceu8::RustSliceU8;
+    pub use crate::rust_slice::RustSlice;
     pub use crate::rust_str::RustStr;
     pub use crate::rust_string::RustString;
+    pub use crate::rust_type::{ImplBox, ImplVec, RustType};
     pub use crate::rust_vec::RustVec;
+    pub use crate::shared_ptr::SharedPtrTarget;
+    pub use crate::string::StackString;
     pub use crate::unique_ptr::UniquePtrTarget;
     pub use crate::unwind::catch_unwind;
+    pub use crate::weak_ptr::WeakPtrTarget;
+    pub use cxxbridge_macro::type_id;
+}
+
+mod actually_private {
+    pub trait Private {}
 }
 
 macro_rules! chars {

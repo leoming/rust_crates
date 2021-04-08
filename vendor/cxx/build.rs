@@ -8,7 +8,8 @@ fn main() {
         .cpp(true)
         .cpp_link_stdlib(None) // linked via link-cplusplus crate
         .flag_if_supported(cxxbridge_flags::STD)
-        .compile("cxxbridge05");
+        .warnings_into_errors(cfg!(deny_warnings))
+        .compile("cxxbridge1");
 
     println!("cargo:rerun-if-changed=src/cxx.cc");
     println!("cargo:rerun-if-changed=include/cxx.h");
@@ -20,8 +21,8 @@ fn main() {
     }
 
     if let Some(rustc) = rustc_version() {
-        if rustc.minor < 43 {
-            println!("cargo:warning=The cxx crate requires a rustc version 1.43.0 or newer.");
+        if rustc.minor < 48 {
+            println!("cargo:warning=The cxx crate requires a rustc version 1.48.0 or newer.");
             println!(
                 "cargo:warning=You appear to be building with: {}",
                 rustc.version,

@@ -1,67 +1,61 @@
-use crate::syntax::atom::Atom::{self, *};
 use crate::syntax::improper::ImproperCtype;
+use crate::syntax::instantiate::ImplKey;
+use crate::syntax::map::{OrderedMap, UnorderedMap};
 use crate::syntax::report::Errors;
-use crate::syntax::set::{OrderedSet as Set, UnorderedSet};
+use crate::syntax::resolve::Resolution;
+use crate::syntax::set::{OrderedSet, UnorderedSet};
+use crate::syntax::trivial::{self, TrivialReason};
+use crate::syntax::visit::{self, Visit};
 use crate::syntax::{
-    toposort, Api, Derive, Enum, ExternFn, ExternType, Impl, Pair, ResolvableName, Struct, Type,
-    TypeAlias,
+    toposort, Api, Atom, Enum, ExternType, Impl, Lifetimes, Pair, Struct, Type, TypeAlias,
 };
 use proc_macro2::Ident;
 use quote::ToTokens;
-use std::collections::BTreeMap as Map;
 
 pub struct Types<'a> {
-    pub all: Set<&'a Type>,
-    pub structs: Map<&'a Ident, &'a Struct>,
-    pub enums: Map<&'a Ident, &'a Enum>,
-    pub cxx: Set<&'a Ident>,
-    pub rust: Set<&'a Ident>,
-    pub aliases: Map<&'a Ident, &'a TypeAlias>,
-    pub untrusted: Map<&'a Ident, &'a ExternType>,
-    pub required_trivial: Map<&'a Ident, TrivialReason<'a>>,
-    pub explicit_impls: Set<&'a Impl>,
-    pub resolutions: Map<&'a Ident, &'a Pair>,
+    pub all: OrderedSet<&'a Type>,
+    pub structs: UnorderedMap<&'a Ident, &'a Struct>,
+    pub enums: UnorderedMap<&'a Ident, &'a Enum>,
+    pub cxx: UnorderedSet<&'a Ident>,
+    pub rust: UnorderedSet<&'a Ident>,
+    pub aliases: UnorderedMap<&'a Ident, &'a TypeAlias>,
+    pub untrusted: UnorderedMap<&'a Ident, &'a ExternType>,
+    pub required_trivial: UnorderedMap<&'a Ident, Vec<TrivialReason<'a>>>,
+    pub impls: OrderedMap<ImplKey<'a>, Option<&'a Impl>>,
+    pub resolutions: UnorderedMap<&'a Ident, Resolution<'a>>,
     pub struct_improper_ctypes: UnorderedSet<&'a Ident>,
     pub toposorted_structs: Vec<&'a Struct>,
 }
 
 impl<'a> Types<'a> {
     pub fn collect(cx: &mut Errors, apis: &'a [Api]) -> Self {
-        let mut all = Set::new();
-        let mut structs = Map::new();
-        let mut enums = Map::new();
-        let mut cxx = Set::new();
-        let mut rust = Set::new();
-        let mut aliases = Map::new();
-        let mut untrusted = Map::new();
-        let mut explicit_impls = Set::new();
-        let mut resolutions = Map::new();
+        let mut all = OrderedSet::new();
+        let mut structs = UnorderedMap::new();
+        let mut enums = UnorderedMap::new();
+        let mut cxx = UnorderedSet::new();
+        let mut rust = UnorderedSet::new();
+        let mut aliases = UnorderedMap::new();
+        let mut untrusted = UnorderedMap::new();
+        let mut impls = OrderedMap::new();
+        let mut resolutions = UnorderedMap::new();
         let struct_improper_ctypes = UnorderedSet::new();
         let toposorted_structs = Vec::new();
 
-        fn visit<'a>(all: &mut Set<&'a Type>, ty: &'a Type) {
-            all.insert(ty);
-            match ty {
-                Type::Ident(_) | Type::Str(_) | Type::Void(_) | Type::SliceRefU8(_) => {}
-                Type::RustBox(ty)
-                | Type::UniquePtr(ty)
-                | Type::CxxVector(ty)
-                | Type::RustVec(ty) => visit(all, &ty.inner),
-                Type::Ref(r) => visit(all, &r.inner),
-                Type::Slice(s) => visit(all, &s.inner),
-                Type::Fn(f) => {
-                    if let Some(ret) = &f.ret {
-                        visit(all, ret);
-                    }
-                    for arg in &f.args {
-                        visit(all, &arg.ty);
-                    }
+        fn visit<'a>(all: &mut OrderedSet<&'a Type>, ty: &'a Type) {
+            struct CollectTypes<'s, 'a>(&'s mut OrderedSet<&'a Type>);
+
+            impl<'s, 'a> Visit<'a> for CollectTypes<'s, 'a> {
+                fn visit_type(&mut self, ty: &'a Type) {
+                    self.0.insert(ty);
+                    visit::visit_type(self, ty);
                 }
             }
+
+            CollectTypes(all).visit_type(ty);
         }
 
-        let mut add_resolution = |pair: &'a Pair| {
-            resolutions.insert(&pair.rust, pair);
+        let mut add_resolution = |name: &'a Pair, generics: &'a Lifetimes| {
+            resolutions.insert(&name.rust, Resolution { name, generics });
         };
 
         let mut type_names = UnorderedSet::new();
@@ -91,7 +85,7 @@ impl<'a> Types<'a> {
                     for field in &strct.fields {
                         visit(&mut all, &field.ty);
                     }
-                    add_resolution(&strct.name);
+                    add_resolution(&strct.name, &strct.generics);
                 }
                 Api::Enum(enm) => {
                     all.insert(&enm.repr_type);
@@ -107,7 +101,7 @@ impl<'a> Types<'a> {
                         duplicate_name(cx, enm, ident);
                     }
                     enums.insert(ident, enm);
-                    add_resolution(&enm.name);
+                    add_resolution(&enm.name, &enm.generics);
                 }
                 Api::CxxType(ety) => {
                     let ident = &ety.name.rust;
@@ -124,7 +118,7 @@ impl<'a> Types<'a> {
                     if !ety.trusted {
                         untrusted.insert(ident, ety);
                     }
-                    add_resolution(&ety.name);
+                    add_resolution(&ety.name, &ety.generics);
                 }
                 Api::RustType(ety) => {
                     let ident = &ety.name.rust;
@@ -132,7 +126,7 @@ impl<'a> Types<'a> {
                         duplicate_name(cx, ety, ident);
                     }
                     rust.insert(ident);
-                    add_resolution(&ety.name);
+                    add_resolution(&ety.name, &ety.generics);
                 }
                 Api::CxxFunction(efn) | Api::RustFunction(efn) => {
                     // Note: duplication of the C++ name is fine because C++ has
@@ -154,12 +148,34 @@ impl<'a> Types<'a> {
                     }
                     cxx.insert(ident);
                     aliases.insert(ident, alias);
-                    add_resolution(&alias.name);
+                    add_resolution(&alias.name, &alias.generics);
                 }
                 Api::Impl(imp) => {
                     visit(&mut all, &imp.ty);
-                    explicit_impls.insert(imp);
+                    if let Some(key) = imp.ty.impl_key() {
+                        impls.insert(key, Some(imp));
+                    }
                 }
+            }
+        }
+
+        for ty in &all {
+            let impl_key = match ty.impl_key() {
+                Some(impl_key) => impl_key,
+                None => continue,
+            };
+            let implicit_impl = match impl_key {
+                ImplKey::RustBox(ident)
+                | ImplKey::RustVec(ident)
+                | ImplKey::UniquePtr(ident)
+                | ImplKey::SharedPtr(ident)
+                | ImplKey::WeakPtr(ident)
+                | ImplKey::CxxVector(ident) => {
+                    Atom::from(ident.rust).is_none() && !aliases.contains_key(ident.rust)
+                }
+            };
+            if implicit_impl && !impls.contains_key(&impl_key) {
+                impls.insert(impl_key, None);
             }
         }
 
@@ -167,35 +183,8 @@ impl<'a> Types<'a> {
         // we check that this is permissible. We do this _after_ scanning all
         // the APIs above, in case some function or struct references a type
         // which is declared subsequently.
-        let mut required_trivial = Map::new();
-        let mut insist_alias_types_are_trivial = |ty: &'a Type, reason| {
-            if let Type::Ident(ident) = ty {
-                if cxx.contains(&ident.rust) {
-                    required_trivial.entry(&ident.rust).or_insert(reason);
-                }
-            }
-        };
-        for api in apis {
-            match api {
-                Api::Struct(strct) => {
-                    let reason = TrivialReason::StructField(strct);
-                    for field in &strct.fields {
-                        insist_alias_types_are_trivial(&field.ty, reason);
-                    }
-                }
-                Api::CxxFunction(efn) | Api::RustFunction(efn) => {
-                    let reason = TrivialReason::FunctionArgument(efn);
-                    for arg in &efn.args {
-                        insist_alias_types_are_trivial(&arg.ty, reason);
-                    }
-                    if let Some(ret) = &efn.ret {
-                        let reason = TrivialReason::FunctionReturn(efn);
-                        insist_alias_types_are_trivial(&ret, reason);
-                    }
-                }
-                _ => {}
-            }
-        }
+        let required_trivial =
+            trivial::required_trivial_reasons(apis, &all, &structs, &enums, &cxx);
 
         let mut types = Types {
             all,
@@ -206,7 +195,7 @@ impl<'a> Types<'a> {
             aliases,
             untrusted,
             required_trivial,
-            explicit_impls,
+            impls,
             resolutions,
             struct_improper_ctypes,
             toposorted_structs,
@@ -214,7 +203,7 @@ impl<'a> Types<'a> {
 
         types.toposorted_structs = toposort::sort(cx, apis, &types);
 
-        let mut unresolved_structs: Vec<&Ident> = types.structs.keys().copied().collect();
+        let mut unresolved_structs = types.structs.keys();
         let mut new_information = true;
         while new_information {
             new_information = false;
@@ -243,25 +232,10 @@ impl<'a> Types<'a> {
 
     pub fn needs_indirect_abi(&self, ty: &Type) -> bool {
         match ty {
-            Type::Ident(ident) => {
-                if let Some(strct) = self.structs.get(&ident.rust) {
-                    !self.is_pod(strct)
-                } else {
-                    Atom::from(&ident.rust) == Some(RustString)
-                }
-            }
-            Type::RustVec(_) => true,
-            _ => false,
+            Type::RustBox(_) | Type::UniquePtr(_) => false,
+            Type::Array(_) => true,
+            _ => !self.is_guaranteed_pod(ty),
         }
-    }
-
-    pub fn is_pod(&self, strct: &Struct) -> bool {
-        for derive in &strct.derives {
-            if *derive == Derive::Copy {
-                return true;
-            }
-        }
-        false
     }
 
     // Types that trigger rustc's default #[warn(improper_ctypes)] lint, even if
@@ -276,12 +250,6 @@ impl<'a> Types<'a> {
             ImproperCtype::Depends(ident) => self.struct_improper_ctypes.contains(ident),
         }
     }
-
-    pub fn resolve(&self, ident: &ResolvableName) -> &Pair {
-        self.resolutions
-            .get(&ident.rust)
-            .expect("Unable to resolve type")
-    }
 }
 
 impl<'t, 'a> IntoIterator for &'t Types<'a> {
@@ -290,13 +258,6 @@ impl<'t, 'a> IntoIterator for &'t Types<'a> {
     fn into_iter(self) -> Self::IntoIter {
         self.all.into_iter()
     }
-}
-
-#[derive(Copy, Clone)]
-pub enum TrivialReason<'a> {
-    StructField(&'a Struct),
-    FunctionArgument(&'a ExternFn),
-    FunctionReturn(&'a ExternFn),
 }
 
 fn duplicate_name(cx: &mut Errors, sp: impl ToTokens, ident: &Ident) {

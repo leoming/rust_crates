@@ -19,7 +19,7 @@ impl<'a> Types<'a> {
                 } else if let Some(strct) = self.structs.get(ident) {
                     Depends(&strct.name.rust) // iterate to fixed-point
                 } else {
-                    Definite(self.rust.contains(ident))
+                    Definite(self.rust.contains(ident) || self.aliases.contains_key(ident))
                 }
             }
             Type::RustBox(_)
@@ -27,10 +27,13 @@ impl<'a> Types<'a> {
             | Type::Str(_)
             | Type::Fn(_)
             | Type::Void(_)
-            | Type::Slice(_)
-            | Type::SliceRefU8(_) => Definite(true),
-            Type::UniquePtr(_) | Type::CxxVector(_) => Definite(false),
+            | Type::SliceRef(_) => Definite(true),
+            Type::UniquePtr(_) | Type::SharedPtr(_) | Type::WeakPtr(_) | Type::CxxVector(_) => {
+                Definite(false)
+            }
             Type::Ref(ty) => self.determine_improper_ctype(&ty.inner),
+            Type::Ptr(ty) => self.determine_improper_ctype(&ty.inner),
+            Type::Array(ty) => self.determine_improper_ctype(&ty.inner),
         }
     }
 }

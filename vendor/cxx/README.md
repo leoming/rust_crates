@@ -18,14 +18,21 @@ can be 100% safe.
 
 ```toml
 [dependencies]
-cxx = "0.5"
+cxx = "1.0"
 
 [build-dependencies]
-cxx-build = "0.5"
+cxx-build = "1.0"
 ```
 
-*Compiler support: requires rustc 1.43+ and c++11 or newer*<br>
+*Compiler support: requires rustc 1.48+ and c++11 or newer*<br>
 *[Release notes](https://github.com/dtolnay/cxx/releases)*
+
+<br>
+
+## Guide
+
+Please see **<https://cxx.rs>** for a tutorial, reference material, and example
+code.
 
 <br>
 
@@ -90,7 +97,7 @@ mod ffi {
         fn next_chunk(buf: &mut MultiBuf) -> &[u8];
     }
 
-    extern "C++" {
+    unsafe extern "C++" {
         // One or more headers with the matching C++ declarations. Our code
         // generators don't read it but it gets #include'd and used in static
         // assertions to ensure our picture of the FFI boundary is accurate.
@@ -228,7 +235,7 @@ set up any additional source files and compiler flags as normal.
 # Cargo.toml
 
 [build-dependencies]
-cxx-build = "0.5"
+cxx-build = "1.0"
 ```
 
 ```rust
@@ -315,12 +322,16 @@ returns of functions.
 <tr><th>name in Rust</th><th>name in C++</th><th>restrictions</th></tr>
 <tr><td>String</td><td>rust::String</td><td></td></tr>
 <tr><td>&amp;str</td><td>rust::Str</td><td></td></tr>
-<tr><td>&amp;[u8]</td><td>rust::Slice&lt;uint8_t&gt;</td><td><sup><i>arbitrary &amp;[T] not implemented yet</i></sup></td></tr>
-<tr><td><a href="https://docs.rs/cxx/0.5/cxx/struct.CxxString.html">CxxString</a></td><td>std::string</td><td><sup><i>cannot be passed by value</i></sup></td></tr>
+<tr><td>&amp;[T]</td><td>rust::Slice&lt;const T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
+<tr><td>&amp;mut [T]</td><td>rust::Slice&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
+<tr><td><a href="https://docs.rs/cxx/1.0/cxx/struct.CxxString.html">CxxString</a></td><td>std::string</td><td><sup><i>cannot be passed by value</i></sup></td></tr>
 <tr><td>Box&lt;T&gt;</td><td>rust::Box&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
-<tr><td><a href="https://docs.rs/cxx/0.5/cxx/struct.UniquePtr.html">UniquePtr&lt;T&gt;</a></td><td>std::unique_ptr&lt;T&gt;</td><td><sup><i>cannot hold opaque Rust type</i></sup></td></tr>
+<tr><td><a href="https://docs.rs/cxx/1.0/cxx/struct.UniquePtr.html">UniquePtr&lt;T&gt;</a></td><td>std::unique_ptr&lt;T&gt;</td><td><sup><i>cannot hold opaque Rust type</i></sup></td></tr>
+<tr><td><a href="https://docs.rs/cxx/1.0/cxx/struct.SharedPtr.html">SharedPtr&lt;T&gt;</a></td><td>std::shared_ptr&lt;T&gt;</td><td><sup><i>cannot hold opaque Rust type</i></sup></td></tr>
+<tr><td>[T; N]</td><td>std::array&lt;T, N&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
 <tr><td>Vec&lt;T&gt;</td><td>rust::Vec&lt;T&gt;</td><td><sup><i>cannot hold opaque C++ type</i></sup></td></tr>
-<tr><td><a href="https://docs.rs/cxx/0.5/cxx/struct.CxxVector.html">CxxVector&lt;T&gt;</a></td><td>std::vector&lt;T&gt;</td><td><sup><i>cannot be passed by value, cannot hold opaque Rust type</i></sup></td></tr>
+<tr><td><a href="https://docs.rs/cxx/1.0/cxx/struct.CxxVector.html">CxxVector&lt;T&gt;</a></td><td>std::vector&lt;T&gt;</td><td><sup><i>cannot be passed by value, cannot hold opaque Rust type</i></sup></td></tr>
+<tr><td>*mut T, *const T</td><td>T*, const T*</td><td><sup><i>fn with a raw pointer argument must be declared unsafe to call</i></sup></td></tr>
 <tr><td>fn(T, U) -&gt; V</td><td>rust::Fn&lt;V(T, U)&gt;</td><td><sup><i>only passing from Rust to C++ is implemented so far</i></sup></td></tr>
 <tr><td>Result&lt;T&gt;</td><td>throw/catch</td><td><sup><i>allowed as return type only</i></sup></td></tr>
 </table>
@@ -341,7 +352,6 @@ matter of designing a nice API for each in its non-native language.
 <tr><td>Option&lt;T&gt;</td><td><sup><i>tbd</i></sup></td></tr>
 <tr><td><sup><i>tbd</i></sup></td><td>std::map&lt;K, V&gt;</td></tr>
 <tr><td><sup><i>tbd</i></sup></td><td>std::unordered_map&lt;K, V&gt;</td></tr>
-<tr><td><sup><i>tbd</i></sup></td><td>std::shared_ptr&lt;T&gt;</td></tr>
 </table>
 
 <br>

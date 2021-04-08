@@ -1,73 +1,70 @@
-use crate::syntax::{Namespace, Pair, ResolvableName, Symbol, Types};
+use crate::syntax::symbol::Segment;
+use crate::syntax::{Lifetimes, NamedType, Pair, Symbol};
 use proc_macro2::{Ident, Span};
+use std::fmt::{self, Display};
 use std::iter;
-use syn::Token;
+use syn::parse::{Error, Result};
+use syn::punctuated::Punctuated;
+
+#[derive(Clone)]
+pub struct ForeignName {
+    text: String,
+    span: Span,
+}
 
 impl Pair {
-    // Use this constructor when the item can't have a different name in Rust
-    // and C++.
-    pub fn new(namespace: Namespace, ident: Ident) -> Self {
-        Self {
-            namespace,
-            cxx: ident.clone(),
-            rust: ident,
-        }
-    }
-
-    // Use this constructor when attributes such as #[rust_name] can be used to
-    // potentially give a different name in Rust vs C++.
-    pub fn new_from_differing_names(
-        namespace: Namespace,
-        cxx_ident: Ident,
-        rust_ident: Ident,
-    ) -> Self {
-        Self {
-            namespace,
-            cxx: cxx_ident,
-            rust: rust_ident,
-        }
-    }
-
     pub fn to_symbol(&self) -> Symbol {
-        Symbol::from_idents(self.iter_all_segments())
+        let segments = self
+            .namespace
+            .iter()
+            .map(|ident| ident as &dyn Segment)
+            .chain(iter::once(&self.cxx as &dyn Segment));
+        Symbol::from_idents(segments)
     }
 
     pub fn to_fully_qualified(&self) -> String {
-        format!("::{}", self.join("::"))
-    }
-
-    fn iter_all_segments(&self) -> impl Iterator<Item = &Ident> {
-        self.namespace.iter().chain(iter::once(&self.cxx))
-    }
-
-    fn join(&self, sep: &str) -> String {
-        self.iter_all_segments()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-            .join(sep)
+        let mut fully_qualified = String::new();
+        for segment in &self.namespace {
+            fully_qualified += "::";
+            fully_qualified += &segment.to_string();
+        }
+        fully_qualified += "::";
+        fully_qualified += &self.cxx.to_string();
+        fully_qualified
     }
 }
 
-impl ResolvableName {
-    pub fn new(ident: Ident) -> Self {
-        Self { rust: ident }
-    }
-
-    pub fn make_self(span: Span) -> Self {
-        Self {
-            rust: Token![Self](span).into(),
-        }
-    }
-
-    pub fn is_self(&self) -> bool {
-        self.rust == "Self"
+impl NamedType {
+    pub fn new(rust: Ident) -> Self {
+        let generics = Lifetimes {
+            lt_token: None,
+            lifetimes: Punctuated::new(),
+            gt_token: None,
+        };
+        NamedType { rust, generics }
     }
 
     pub fn span(&self) -> Span {
         self.rust.span()
     }
+}
 
-    pub fn to_symbol(&self, types: &Types) -> Symbol {
-        types.resolve(self).to_symbol()
+impl ForeignName {
+    pub fn parse(text: &str, span: Span) -> Result<Self> {
+        // TODO: support C++ names containing whitespace (`unsigned int`) or
+        // non-alphanumeric characters (`operator++`).
+        match syn::parse_str::<Ident>(text) {
+            Ok(ident) => {
+                let text = ident.to_string();
+                Ok(ForeignName { text, span })
+            }
+            Err(err) => Err(Error::new(span, err)),
+        }
+    }
+}
+
+impl Display for ForeignName {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str(&self.text)
     }
 }

@@ -13,7 +13,7 @@
 [package]
 edition = "2018"
 name = "cxxbridge-flags"
-version = "0.5.10"
+version = "1.0.42"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 description = "Compiler configuration of the `cxx` crate (implementation detail)"
 license = "MIT OR Apache-2.0"

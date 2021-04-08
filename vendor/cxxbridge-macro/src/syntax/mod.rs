@@ -1,9 +1,9 @@
 // Functionality that is shared between the cxxbridge macro and the cmd.
 
 pub mod atom;
-mod attrs;
+pub mod attrs;
 pub mod check;
-mod derive;
+pub mod derive;
 mod discriminant;
 mod doc;
 pub mod error;
@@ -11,18 +11,25 @@ pub mod file;
 pub mod ident;
 mod impls;
 mod improper;
+pub mod instantiate;
 pub mod mangle;
+pub mod map;
 mod names;
 pub mod namespace;
 mod parse;
+mod pod;
 pub mod qualified;
 pub mod report;
+pub mod resolve;
 pub mod set;
 pub mod symbol;
 mod tokens;
 mod toposort;
+pub mod trivial;
 pub mod types;
+mod visit;
 
+use self::attrs::OtherAttrs;
 use self::discriminant::Discriminant;
 use self::namespace::Namespace;
 use self::parse::kw;
@@ -30,11 +37,12 @@ use self::symbol::Symbol;
 use proc_macro2::{Ident, Span};
 use syn::punctuated::Punctuated;
 use syn::token::{Brace, Bracket, Paren};
-use syn::{Expr, Lifetime, Token, Type as RustType};
+use syn::{Expr, Generics, Lifetime, LitInt, Token, Type as RustType};
 
 pub use self::atom::Atom;
-pub use self::derive::Derive;
+pub use self::derive::{Derive, Trait};
 pub use self::doc::Doc;
+pub use self::names::ForeignName;
 pub use self::parse::parse_items;
 pub use self::types::Types;
 
@@ -67,9 +75,16 @@ pub enum IncludeKind {
 }
 
 pub struct ExternType {
+    pub lang: Lang,
     pub doc: Doc,
+    pub derives: Vec<Derive>,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
     pub type_token: Token![type],
     pub name: Pair,
+    pub generics: Lifetimes,
+    pub colon_token: Option<Token![:]>,
+    pub bounds: Vec<Derive>,
     pub semi_token: Token![;],
     pub trusted: bool,
 }
@@ -77,34 +92,49 @@ pub struct ExternType {
 pub struct Struct {
     pub doc: Doc,
     pub derives: Vec<Derive>,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
     pub struct_token: Token![struct],
     pub name: Pair,
+    pub generics: Lifetimes,
     pub brace_token: Brace,
     pub fields: Vec<Var>,
 }
 
 pub struct Enum {
     pub doc: Doc,
+    pub derives: Vec<Derive>,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
     pub enum_token: Token![enum],
     pub name: Pair,
+    pub generics: Lifetimes,
     pub brace_token: Brace,
     pub variants: Vec<Variant>,
     pub repr: Atom,
     pub repr_type: Type,
+    pub explicit_repr: bool,
 }
 
 pub struct ExternFn {
     pub lang: Lang,
     pub doc: Doc,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
     pub name: Pair,
     pub sig: Signature,
     pub semi_token: Token![;],
+    pub trusted: bool,
 }
 
 pub struct TypeAlias {
     pub doc: Doc,
+    pub derives: Vec<Derive>,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
     pub type_token: Token![type],
     pub name: Pair,
+    pub generics: Lifetimes,
     pub eq_token: Token![=],
     pub ty: RustType,
     pub semi_token: Token![;],
@@ -112,13 +142,25 @@ pub struct TypeAlias {
 
 pub struct Impl {
     pub impl_token: Token![impl],
+    pub impl_generics: Lifetimes,
+    pub negative: bool,
     pub ty: Type,
+    pub ty_generics: Lifetimes,
     pub brace_token: Brace,
+    pub negative_token: Option<Token![!]>,
+}
+
+#[derive(Clone, Default)]
+pub struct Lifetimes {
+    pub lt_token: Option<Token![<]>,
+    pub lifetimes: Punctuated<Lifetime, Token![,]>,
+    pub gt_token: Option<Token![>]>,
 }
 
 pub struct Signature {
     pub unsafety: Option<Token![unsafe]>,
     pub fn_token: Token![fn],
+    pub generics: Generics,
     pub receiver: Option<Receiver>,
     pub args: Punctuated<Var, Token![,]>,
     pub ret: Option<Type>,
@@ -127,39 +169,49 @@ pub struct Signature {
     pub throws_tokens: Option<(kw::Result, Token![<], Token![>])>,
 }
 
-#[derive(Eq, PartialEq, Hash)]
 pub struct Var {
-    pub ident: Ident,
+    pub doc: Doc,
+    pub attrs: OtherAttrs,
+    pub visibility: Token![pub],
+    pub name: Pair,
     pub ty: Type,
 }
 
 pub struct Receiver {
+    pub pinned: bool,
     pub ampersand: Token![&],
     pub lifetime: Option<Lifetime>,
-    pub mutability: Option<Token![mut]>,
+    pub mutable: bool,
     pub var: Token![self],
-    pub ty: ResolvableName,
+    pub ty: NamedType,
     pub shorthand: bool,
+    pub pin_tokens: Option<(kw::Pin, Token![<], Token![>])>,
+    pub mutability: Option<Token![mut]>,
 }
 
 pub struct Variant {
-    pub ident: Ident,
+    pub doc: Doc,
+    pub attrs: OtherAttrs,
+    pub name: Pair,
     pub discriminant: Discriminant,
     pub expr: Option<Expr>,
 }
 
 pub enum Type {
-    Ident(ResolvableName),
+    Ident(NamedType),
     RustBox(Box<Ty1>),
     RustVec(Box<Ty1>),
     UniquePtr(Box<Ty1>),
+    SharedPtr(Box<Ty1>),
+    WeakPtr(Box<Ty1>),
     Ref(Box<Ref>),
+    Ptr(Box<Ptr>),
     Str(Box<Ref>),
     CxxVector(Box<Ty1>),
     Fn(Box<Signature>),
     Void(Span),
-    Slice(Box<Slice>),
-    SliceRefU8(Box<Ref>),
+    SliceRef(Box<SliceRef>),
+    Array(Box<Array>),
 }
 
 pub struct Ty1 {
@@ -170,15 +222,38 @@ pub struct Ty1 {
 }
 
 pub struct Ref {
+    pub pinned: bool,
     pub ampersand: Token![&],
     pub lifetime: Option<Lifetime>,
-    pub mutability: Option<Token![mut]>,
+    pub mutable: bool,
     pub inner: Type,
+    pub pin_tokens: Option<(kw::Pin, Token![<], Token![>])>,
+    pub mutability: Option<Token![mut]>,
 }
 
-pub struct Slice {
+pub struct Ptr {
+    pub star: Token![*],
+    pub mutable: bool,
+    pub inner: Type,
+    pub mutability: Option<Token![mut]>,
+    pub constness: Option<Token![const]>,
+}
+
+pub struct SliceRef {
+    pub ampersand: Token![&],
+    pub lifetime: Option<Lifetime>,
+    pub mutable: bool,
     pub bracket: Bracket,
     pub inner: Type,
+    pub mutability: Option<Token![mut]>,
+}
+
+pub struct Array {
+    pub bracket: Bracket,
+    pub inner: Type,
+    pub semi_token: Token![;],
+    pub len: usize,
+    pub len_token: LitInt,
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -192,13 +267,14 @@ pub enum Lang {
 #[derive(Clone)]
 pub struct Pair {
     pub namespace: Namespace,
-    pub cxx: Ident,
+    pub cxx: ForeignName,
     pub rust: Ident,
 }
 
 // Wrapper for a type which needs to be resolved before it can be printed in
 // C++.
-#[derive(Clone, PartialEq, Hash)]
-pub struct ResolvableName {
+#[derive(PartialEq, Eq, Hash)]
+pub struct NamedType {
     pub rust: Ident,
+    pub generics: Lifetimes,
 }

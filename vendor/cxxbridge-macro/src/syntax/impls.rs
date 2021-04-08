@@ -1,11 +1,12 @@
-use crate::syntax::{ExternFn, Impl, Include, Receiver, Ref, Signature, Slice, Ty1, Type};
-use std::borrow::Borrow;
+use crate::syntax::{
+    Array, ExternFn, Include, Lifetimes, Ptr, Receiver, Ref, Signature, SliceRef, Ty1, Type, Var,
+};
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
 impl PartialEq for Include {
-    fn eq(&self, other: &Include) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         let Include {
             path,
             kind,
@@ -43,13 +44,16 @@ impl Hash for Type {
             Type::Ident(t) => t.hash(state),
             Type::RustBox(t) => t.hash(state),
             Type::UniquePtr(t) => t.hash(state),
+            Type::SharedPtr(t) => t.hash(state),
+            Type::WeakPtr(t) => t.hash(state),
             Type::Ref(t) => t.hash(state),
+            Type::Ptr(t) => t.hash(state),
             Type::Str(t) => t.hash(state),
             Type::RustVec(t) => t.hash(state),
             Type::CxxVector(t) => t.hash(state),
             Type::Fn(t) => t.hash(state),
-            Type::Slice(t) => t.hash(state),
-            Type::SliceRefU8(t) => t.hash(state),
+            Type::SliceRef(t) => t.hash(state),
+            Type::Array(t) => t.hash(state),
             Type::Void(_) => {}
         }
     }
@@ -58,20 +62,53 @@ impl Hash for Type {
 impl Eq for Type {}
 
 impl PartialEq for Type {
-    fn eq(&self, other: &Type) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Type::Ident(lhs), Type::Ident(rhs)) => lhs == rhs,
             (Type::RustBox(lhs), Type::RustBox(rhs)) => lhs == rhs,
             (Type::UniquePtr(lhs), Type::UniquePtr(rhs)) => lhs == rhs,
+            (Type::SharedPtr(lhs), Type::SharedPtr(rhs)) => lhs == rhs,
+            (Type::WeakPtr(lhs), Type::WeakPtr(rhs)) => lhs == rhs,
             (Type::Ref(lhs), Type::Ref(rhs)) => lhs == rhs,
             (Type::Str(lhs), Type::Str(rhs)) => lhs == rhs,
             (Type::RustVec(lhs), Type::RustVec(rhs)) => lhs == rhs,
             (Type::CxxVector(lhs), Type::CxxVector(rhs)) => lhs == rhs,
             (Type::Fn(lhs), Type::Fn(rhs)) => lhs == rhs,
-            (Type::Slice(lhs), Type::Slice(rhs)) => lhs == rhs,
-            (Type::SliceRefU8(lhs), Type::SliceRefU8(rhs)) => lhs == rhs,
+            (Type::SliceRef(lhs), Type::SliceRef(rhs)) => lhs == rhs,
             (Type::Void(_), Type::Void(_)) => true,
             (_, _) => false,
+        }
+    }
+}
+
+impl Eq for Lifetimes {}
+
+impl PartialEq for Lifetimes {
+    fn eq(&self, other: &Self) -> bool {
+        let Lifetimes {
+            lt_token: _,
+            lifetimes,
+            gt_token: _,
+        } = self;
+        let Lifetimes {
+            lt_token: _,
+            lifetimes: lifetimes2,
+            gt_token: _,
+        } = other;
+        lifetimes.iter().eq(lifetimes2)
+    }
+}
+
+impl Hash for Lifetimes {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let Lifetimes {
+            lt_token: _,
+            lifetimes,
+            gt_token: _,
+        } = self;
+        lifetimes.len().hash(state);
+        for lifetime in lifetimes {
+            lifetime.hash(state);
         }
     }
 }
@@ -79,7 +116,7 @@ impl PartialEq for Type {
 impl Eq for Ty1 {}
 
 impl PartialEq for Ty1 {
-    fn eq(&self, other: &Ty1) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         let Ty1 {
             name,
             langle: _,
@@ -112,64 +149,167 @@ impl Hash for Ty1 {
 impl Eq for Ref {}
 
 impl PartialEq for Ref {
-    fn eq(&self, other: &Ref) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         let Ref {
+            pinned,
             ampersand: _,
             lifetime,
-            mutability,
+            mutable,
             inner,
+            pin_tokens: _,
+            mutability: _,
         } = self;
         let Ref {
+            pinned: pinned2,
             ampersand: _,
             lifetime: lifetime2,
-            mutability: mutability2,
+            mutable: mutable2,
             inner: inner2,
+            pin_tokens: _,
+            mutability: _,
         } = other;
-        lifetime == lifetime2 && mutability.is_some() == mutability2.is_some() && inner == inner2
+        pinned == pinned2 && lifetime == lifetime2 && mutable == mutable2 && inner == inner2
     }
 }
 
 impl Hash for Ref {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let Ref {
+            pinned,
             ampersand: _,
             lifetime,
-            mutability,
+            mutable,
             inner,
+            pin_tokens: _,
+            mutability: _,
         } = self;
+        pinned.hash(state);
         lifetime.hash(state);
-        mutability.is_some().hash(state);
+        mutable.hash(state);
         inner.hash(state);
     }
 }
 
-impl Eq for Slice {}
+impl Eq for Ptr {}
 
-impl PartialEq for Slice {
-    fn eq(&self, other: &Slice) -> bool {
-        let Slice { bracket: _, inner } = self;
-        let Slice {
+impl PartialEq for Ptr {
+    fn eq(&self, other: &Ptr) -> bool {
+        let Ptr {
+            star: _,
+            mutable,
+            inner,
+            mutability: _,
+            constness: _,
+        } = self;
+        let Ptr {
+            star: _,
+            mutable: mutable2,
+            inner: inner2,
+            mutability: _,
+            constness: _,
+        } = other;
+        mutable == mutable2 && inner == inner2
+    }
+}
+
+impl Hash for Ptr {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let Ptr {
+            star: _,
+            mutable,
+            inner,
+            mutability: _,
+            constness: _,
+        } = self;
+        mutable.hash(state);
+        inner.hash(state);
+    }
+}
+
+impl Eq for SliceRef {}
+
+impl PartialEq for SliceRef {
+    fn eq(&self, other: &Self) -> bool {
+        let SliceRef {
+            ampersand: _,
+            lifetime,
+            mutable,
+            bracket: _,
+            inner,
+            mutability: _,
+        } = self;
+        let SliceRef {
+            ampersand: _,
+            lifetime: lifetime2,
+            mutable: mutable2,
             bracket: _,
             inner: inner2,
+            mutability: _,
         } = other;
-        inner == inner2
+        lifetime == lifetime2 && mutable == mutable2 && inner == inner2
     }
 }
 
-impl Hash for Slice {
+impl Hash for SliceRef {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let Slice { bracket: _, inner } = self;
+        let SliceRef {
+            ampersand: _,
+            lifetime,
+            mutable,
+            bracket: _,
+            inner,
+            mutability: _,
+        } = self;
+        lifetime.hash(state);
+        mutable.hash(state);
         inner.hash(state);
+    }
+}
+
+impl Eq for Array {}
+
+impl PartialEq for Array {
+    fn eq(&self, other: &Self) -> bool {
+        let Array {
+            bracket: _,
+            inner,
+            semi_token: _,
+            len,
+            len_token: _,
+        } = self;
+        let Array {
+            bracket: _,
+            inner: inner2,
+            semi_token: _,
+            len: len2,
+            len_token: _,
+        } = other;
+        inner == inner2 && len == len2
+    }
+}
+
+impl Hash for Array {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let Array {
+            bracket: _,
+            inner,
+            semi_token: _,
+            len,
+            len_token: _,
+        } = self;
+        inner.hash(state);
+        len.hash(state);
     }
 }
 
 impl Eq for Signature {}
 
 impl PartialEq for Signature {
-    fn eq(&self, other: &Signature) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         let Signature {
             unsafety,
             fn_token: _,
+            generics: _,
             receiver,
             args,
             ret,
@@ -180,6 +320,7 @@ impl PartialEq for Signature {
         let Signature {
             unsafety: unsafety2,
             fn_token: _,
+            generics: _,
             receiver: receiver2,
             args: args2,
             ret: ret2,
@@ -192,7 +333,23 @@ impl PartialEq for Signature {
             && ret == ret2
             && throws == throws2
             && args.len() == args2.len()
-            && args.iter().zip(args2).all(|(arg, arg2)| arg == arg2)
+            && args.iter().zip(args2).all(|(arg, arg2)| {
+                let Var {
+                    doc: _,
+                    attrs: _,
+                    visibility: _,
+                    name: _,
+                    ty,
+                } = arg;
+                let Var {
+                    doc: _,
+                    attrs: _,
+                    visibility: _,
+                    name: _,
+                    ty: ty2,
+                } = arg2;
+                ty == ty2
+            })
     }
 }
 
@@ -201,6 +358,7 @@ impl Hash for Signature {
         let Signature {
             unsafety,
             fn_token: _,
+            generics: _,
             receiver,
             args,
             ret,
@@ -211,7 +369,14 @@ impl Hash for Signature {
         unsafety.is_some().hash(state);
         receiver.hash(state);
         for arg in args {
-            arg.hash(state);
+            let Var {
+                doc: _,
+                attrs: _,
+                visibility: _,
+                name: _,
+                ty,
+            } = arg;
+            ty.hash(state);
         }
         ret.hash(state);
         throws.hash(state);
@@ -221,74 +386,49 @@ impl Hash for Signature {
 impl Eq for Receiver {}
 
 impl PartialEq for Receiver {
-    fn eq(&self, other: &Receiver) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         let Receiver {
+            pinned,
             ampersand: _,
             lifetime,
-            mutability,
+            mutable,
             var: _,
             ty,
             shorthand: _,
+            pin_tokens: _,
+            mutability: _,
         } = self;
         let Receiver {
+            pinned: pinned2,
             ampersand: _,
             lifetime: lifetime2,
-            mutability: mutability2,
+            mutable: mutable2,
             var: _,
             ty: ty2,
             shorthand: _,
+            pin_tokens: _,
+            mutability: _,
         } = other;
-        lifetime == lifetime2 && mutability.is_some() == mutability2.is_some() && ty == ty2
+        pinned == pinned2 && lifetime == lifetime2 && mutable == mutable2 && ty == ty2
     }
 }
 
 impl Hash for Receiver {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let Receiver {
+            pinned,
             ampersand: _,
             lifetime,
-            mutability,
+            mutable,
             var: _,
             ty,
             shorthand: _,
+            pin_tokens: _,
+            mutability: _,
         } = self;
+        pinned.hash(state);
         lifetime.hash(state);
-        mutability.is_some().hash(state);
+        mutable.hash(state);
         ty.hash(state);
-    }
-}
-
-impl Hash for Impl {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let Impl {
-            impl_token: _,
-            ty,
-            brace_token: _,
-        } = self;
-        ty.hash(state);
-    }
-}
-
-impl Eq for Impl {}
-
-impl PartialEq for Impl {
-    fn eq(&self, other: &Impl) -> bool {
-        let Impl {
-            impl_token: _,
-            ty,
-            brace_token: _,
-        } = self;
-        let Impl {
-            impl_token: _,
-            ty: ty2,
-            brace_token: _,
-        } = other;
-        ty == ty2
-    }
-}
-
-impl Borrow<Type> for &Impl {
-    fn borrow(&self) -> &Type {
-        &self.ty
     }
 }
