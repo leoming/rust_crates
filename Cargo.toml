@@ -10,7 +10,7 @@ bindgen = "0.51"
 bytes = "1.0"
 cxx = { version = "1.0.42", features = ["c++17"] }
 env_logger = "0.8"
-futures = "=0.3.12"
+futures = "0.3.13"
 grpcio = { version = "0.7", features = ["protobuf", "protobuf-codec", "openssl"] }
 grpcio-sys = { version = "*", features = ["openssl"] }
 lazy_static = "1.4"
