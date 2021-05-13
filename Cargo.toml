@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1.42"
-bindgen = "0.51"
+bindgen = "0.57"
 bytes = "1.0"
 cxx = { version = "1.0.42", features = ["c++17"] }
 dbus = "0.9.2"
@@ -14,8 +14,8 @@ dbus-crossroads = "0.3.0"
 dbus-tokio = "0.7.3"
 env_logger = "0.8"
 futures = "0.3.13"
-grpcio = { version = "0.7", features = ["protobuf", "protobuf-codec", "openssl"] }
-grpcio-sys = { version = "*", features = ["openssl"] }
+grpcio = { version = "0.8", features = ["protobuf", "protobuf-codec", "openssl"] }
+grpcio-sys = { version = "0.8", features = ["openssl"] }
 inotify = "0.9"
 lazy_static = "1.4"
 log = "0.4"

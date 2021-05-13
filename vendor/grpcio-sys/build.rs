@@ -11,7 +11,7 @@ use cmake::Config as CmakeConfig;
 use pkg_config::{Config as PkgConfig, Library};
 use walkdir::WalkDir;
 
-const GRPC_VERSION: &str = "1.33.1";
+const GRPC_VERSION: &str = "1.35.0";
 
 fn probe_library(library: &str, cargo_metadata: bool) -> Library {
     match PkgConfig::new()
@@ -57,6 +57,32 @@ fn trim_start<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
     }
 }
 
+/// If cache is stale, remove it to avoid compilation failure.
+fn clean_up_stale_cache(cxx_compiler: String) {
+    // We don't know the cmake output path before it's configured.
+    let build_dir = format!("{}/build", env::var("OUT_DIR").unwrap());
+    let path = format!("{}/CMakeCache.txt", build_dir);
+    let f = match std::fs::File::open(&path) {
+        Ok(f) => BufReader::new(f),
+        // It may be an empty directory.
+        Err(_) => return,
+    };
+    let cache_stale = f.lines().any(|l| {
+        let l = l.unwrap();
+        trim_start(&l, "CMAKE_CXX_COMPILER:").map_or(false, |s| {
+            let mut splits = s.splitn(2, '=');
+            splits.next();
+            splits.next().map_or(false, |p| p != cxx_compiler)
+        })
+    });
+    // CMake can't handle compiler change well, it will invalidate cache without respecting command
+    // line settings and result in configuration failure.
+    // See https://gitlab.kitware.com/cmake/cmake/-/issues/18959.
+    if cache_stale {
+        let _ = fs::remove_dir_all(&build_dir);
+    }
+}
+
 fn build_grpc(cc: &mut cc::Build, library: &str) {
     prepare_grpc();
 
@@ -75,11 +101,16 @@ fn build_grpc(cc: &mut cc::Build, library: &str) {
             println!("cargo:rustc-link-lib=framework=CoreFoundation");
         }
 
-        if let Some(val) = get_env("CXX") {
-            config.define("CMAKE_CXX_COMPILER", val);
+        let cxx_compiler = if let Some(val) = get_env("CXX") {
+            config.define("CMAKE_CXX_COMPILER", val.clone());
+            val
         } else if env::var("CARGO_CFG_TARGET_ENV").unwrap() == "musl" {
             config.define("CMAKE_CXX_COMPILER", "g++");
-        }
+            "g++".to_owned()
+        } else {
+            format!("{}", cc.get_compiler().path().display())
+        };
+        clean_up_stale_cache(cxx_compiler);
 
         // Cross-compile support for iOS
         match target.as_str() {
@@ -267,7 +298,18 @@ fn get_env(name: &str) -> Option<String> {
 
 // Generate the bindings to grpc C-core.
 // Try to disable the generation of platform-related bindings.
-fn bindgen_grpc(mut config: bindgen::Builder, file_path: &PathBuf) {
+#[cfg(feature = "use-bindgen")]
+fn bindgen_grpc(file_path: &PathBuf) {
+    // create a config to generate binding file
+    let mut config = bindgen::Builder::default();
+    if cfg!(feature = "secure") {
+        config = config.clang_arg("-DGRPC_SYS_SECURE");
+    }
+
+    if get_env("CARGO_CFG_TARGET_OS").map_or(false, |s| s == "windows") {
+        config = config.clang_arg("-D _WIN32_WINNT=0x600");
+    }
+
     // Search header files with API interface
     let mut headers = Vec::new();
     for result in WalkDir::new(Path::new("./grpc/include")) {
@@ -300,6 +342,8 @@ fn bindgen_grpc(mut config: bindgen::Builder, file_path: &PathBuf) {
         .clang_arg("-std=c++11")
         .rustfmt_bindings(true)
         .impl_debug(true)
+        .size_t_is_usize(true)
+        .disable_header_comment()
         .whitelist_function(r"\bgrpc_.*")
         .whitelist_function(r"\bgpr_.*")
         .whitelist_function(r"\bgrpcwrap_.*")
@@ -331,28 +375,36 @@ fn bindgen_grpc(mut config: bindgen::Builder, file_path: &PathBuf) {
 // Determine if need to update bindings. Supported platforms do not
 // need to be updated by default unless the UPDATE_BIND is specified.
 // Other platforms use bindgen to generate the bindings every time.
-fn config_binding_path(config: bindgen::Builder) {
-    let file_path: PathBuf;
+fn config_binding_path() {
     let target = env::var("TARGET").unwrap();
-    match target.as_str() {
+    let file_path: PathBuf = match target.as_str() {
         "x86_64-unknown-linux-gnu" | "aarch64-unknown-linux-gnu" => {
             // Cargo treats nonexistent files changed, so we only emit the rerun-if-changed
             // directive when we expect the target-specific pre-generated binding file to be
             // present.
             println!("cargo:rerun-if-changed=bindings/{}-bindings.rs", &target);
 
-            file_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+            let file_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
                 .join("bindings")
                 .join(format!("{}-bindings.rs", &target));
-            if env::var("UPDATE_BIND").map(|s| s == "1").unwrap_or(false) {
-                bindgen_grpc(config, &file_path);
+
+            #[cfg(feature = "use-bindgen")]
+            if env::var("UPDATE_BIND").is_ok() {
+                bindgen_grpc(&file_path);
             }
+
+            file_path
         }
         _ => {
-            file_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("grpc-bindings.rs");
-            bindgen_grpc(config, &file_path);
+            let file_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("grpc-bindings.rs");
+
+            #[cfg(feature = "use-bindgen")]
+            bindgen_grpc(&file_path);
+
+            file_path
         }
     };
+
     println!(
         "cargo:rustc-env=BINDING_PATH={}",
         file_path.to_str().unwrap()
@@ -366,12 +418,9 @@ fn main() {
 
     // create a builder to compile grpc_wrap.cc
     let mut cc = cc::Build::new();
-    // create a config to generate binding file
-    let mut bind_config = bindgen::Builder::default();
 
     let library = if cfg!(feature = "secure") {
         cc.define("GRPC_SYS_SECURE", None);
-        bind_config = bind_config.clang_arg("-DGRPC_SYS_SECURE");
         "grpc"
     } else {
         "grpc_unsecure"
@@ -380,7 +429,6 @@ fn main() {
     if get_env("CARGO_CFG_TARGET_OS").map_or(false, |s| s == "windows") {
         // At lease vista
         cc.define("_WIN32_WINNT", Some("0x600"));
-        bind_config = bind_config.clang_arg("-D _WIN32_WINNT=0x600");
     }
 
     if get_env("GRPCIO_SYS_USE_PKG_CONFIG").map_or(false, |s| s == "1") {
@@ -401,5 +449,5 @@ fn main() {
     cc.warnings_into_errors(true);
     cc.compile("libgrpc_wrap.a");
 
-    config_binding_path(bind_config);
+    config_binding_path();
 }

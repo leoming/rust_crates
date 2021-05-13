@@ -13,7 +13,7 @@
 [package]
 edition = "2018"
 name = "grpcio-sys"
-version = "0.7.2"
+version = "0.8.1"
 authors = ["The TiKV Project Developers"]
 build = "build.rs"
 exclude = ["grpc/doc/*", "grpc/etc/*", "grpc/examples/*", "grpc/Makefile", "grpc/templates/*", "grpc/src/android/*", "grpc/src/csharp/*", "grpc/src/node/*", "grpc/src/objective-c/*", "grpc/src/php/*", "grpc/src/python/*", "grpc/src/ruby/*", "grpc/test/core/end2end/*", "grpc/third_party/zlib/*", "grpc/third_party/abseil-cpp/absl/time/internal/cctz/testdata", "grpc/third_party/benchmark/*", "grpc/third_party/bloaty/*", "grpc/third_party/boringssl-with-bazel/*", "grpc/third_party/libuv/*", "grpc/third_party/gflags/*", "grpc/third_party/googletest/*", "grpc/third_party/objective_c/*", "grpc/third_party/protobuf/*", "grpc/third_party/toolchans/*", "grpc/third_party/envoy-api/*", "grpc/third_party/googleapis/*", "grpc/third_party/protoc-gen-validate/*", "grpc/third_party/udpa/*", "grpc/tools/run_tests/generated/*", "grpc/test/core/", "!grpc/test/core/security/*.cc", "!grpc/test/core/util/cmdline.cc", "grpc/test/cpp"]
@@ -36,11 +36,13 @@ version = "0.9"
 features = ["vendored"]
 optional = true
 [build-dependencies.bindgen]
-version = "0.51.0"
+version = "0.57.0"
+features = ["runtime"]
+optional = true
 default-features = false
 
 [build-dependencies.boringssl-src]
-version = "0.1.0"
+version = "0.2.0"
 
 [build-dependencies.cc]
 version = "1.0"
@@ -55,8 +57,9 @@ version = "0.3"
 version = "2.2.9"
 
 [features]
-default = []
+default = ["use-bindgen"]
 no-omit-frame-pointer = []
 openssl = ["secure"]
 openssl-vendored = ["openssl", "openssl-sys"]
 secure = []
+use-bindgen = ["bindgen"]

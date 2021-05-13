@@ -122,6 +122,7 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
         // runtime.
         if runtime {
             files.push("libclang.so.*".into());
+            files.push("libclang-*.so.*".into());
         }
     }
 
@@ -180,6 +181,20 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
 pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
     search_libclang_directories(runtime)?
         .iter()
+        // We want to find the `libclang` shared library with the highest
+        // version number, hence `max_by_key` below.
+        //
+        // However, in the case where there are multiple such `libclang` shared
+        // libraries, we want to use the order in which they appeared in the
+        // list returned by `search_libclang_directories` as a tiebreaker since
+        // that function returns `libclang` shared libraries in descending order
+        // of preference by how they were found.
+        //
+        // `max_by_key`, perhaps surprisingly, returns the *last* item with the
+        // maximum key rather than the first which results in the opposite of
+        // the tiebreaking behavior we want. This is easily fixed by reversing
+        // the list first.
+        .rev()
         .max_by_key(|f| &f.2)
         .cloned()
         .map(|(path, filename, _)| (path, filename))
@@ -189,6 +204,8 @@ pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
 /// Find and link to `libclang` dynamically.
 #[cfg(not(feature = "runtime"))]
 pub fn link() {
+    let cep = common::CommandErrorPrinter::default();
+
     use std::fs;
 
     let (directory, filename) = find(false).unwrap();
@@ -198,7 +215,7 @@ pub fn link() {
         // Find the `libclang` stub static library required for the MSVC
         // toolchain.
         let lib = if !directory.ends_with("bin") {
-            directory.to_owned()
+            directory
         } else {
             directory.parent().unwrap().join("lib")
         };
@@ -233,11 +250,13 @@ pub fn link() {
 
         // Strip extensions and trailing version numbers (e.g., the `.so.7.0` in
         // `libclang.so.7.0`).
-        let name = match name.find(".dylib").or(name.find(".so")) {
+        let name = match name.find(".dylib").or_else(|| name.find(".so")) {
             Some(index) => &name[0..index],
             None => &name,
         };
 
         println!("cargo:rustc-link-lib=dylib={}", name);
     }
+
+    cep.discard();
 }

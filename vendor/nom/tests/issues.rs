@@ -5,8 +5,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{space, Err, IResult, Needed, ErrorKind, le_u64, is_digit};
-use nom::types::{CompleteStr, CompleteByteSlice};
+use nom::{character::{is_digit, streaming::space1 as space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
 
 #[allow(dead_code)]
 struct Range {
@@ -69,7 +68,7 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{digit, space, IResult};
+  use nom::{IResult, character::streaming::{digit1 as digit, space1 as space}};
   use std::str;
 
   named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
@@ -105,8 +104,8 @@ mod parse_int {
 
 #[test]
 fn usize_length_bytes_issue() {
-  use nom::be_u16;
-  let _: IResult<&[u8], &[u8], u32> = length_bytes!(b"012346", be_u16);
+  use nom::number::streaming::be_u16;
+  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data!(b"012346", be_u16);
 }
 
 /*
@@ -142,9 +141,9 @@ named!(
 
 named!(issue_308(&str) -> bool,
     do_parse! (
-        tag_s! ("foo") >>
-        b: alt_complete! (
-            map! (tag_s! ("1"), |_: &str|->bool {true}) |
+        tag! ("foo") >>
+        b: alt! (
+            complete!(map! (tag! ("1"), |_: &str|->bool {true})) |
             value! (false)
         ) >>
         (b) ));
@@ -156,7 +155,7 @@ fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
 
 #[test]
 fn issue_655() {
-  use nom::{line_ending, not_line_ending};
+  use nom::character::streaming::{line_ending, not_line_ending};
   named!(twolines(&str) -> (&str, &str),
     do_parse!(
       l1 : not_line_ending >>
@@ -173,62 +172,14 @@ fn issue_655() {
   assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
 }
 
-#[cfg(feature = "std")]
-named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
-
-#[test]
-fn issue_667() {
-  use nom::alpha;
-
-  named!(foo <CompleteByteSlice, Vec<CompleteByteSlice>>,
-    many0!(
-      alt!(alpha | is_a!("_"))
-    )
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"")),
-    Ok((CompleteByteSlice(b""), vec![]))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"loremipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![CompleteByteSlice(b"loremipsum")]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"lorem_ipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![
-        CompleteByteSlice(b"lorem"),
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"ipsum"),
-      ]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"_lorem_ipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"lorem"),
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"ipsum"),
-      ]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"!@#$")),
-    Ok((CompleteByteSlice(b"!@#$"), vec![]))
-  );
-}
-
 #[test]
 fn issue_721() {
-  assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
-  assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
+  named!(f1<&str, u16>, parse_to!(u16));
+  named!(f2<&str, String>, parse_to!(String));
+  assert_eq!(f1("1234"), Ok(("", 1234)));
+  assert_eq!(f2("foo"), Ok(("", "foo".to_string())));
+  //assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
+  //assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
 
 #[cfg(feature = "alloc")]
@@ -250,14 +201,10 @@ named!(issue_724<&str, i32>,
   )
 );
 
-named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
-named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
-
-
 #[test]
 fn issue_752() {
     assert_eq!(
-        Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
+        Err::Error(("ab", nom::error::ErrorKind::ParseTo)),
         parse_to!("ab", usize).unwrap_err()
     )
 }
@@ -268,7 +215,7 @@ fn atom_specials(c: u8) -> bool {
 
 named!(
     capability<&str>,
-    do_parse!(tag_s!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
+    do_parse!(tag!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
 );
 
 #[test]
@@ -277,41 +224,15 @@ fn issue_759() {
 }
 
 named_args!(issue_771(count: usize)<Vec<u32>>,
-  length_count!(value!(count), call!(nom::be_u32))
+  length_count!(value!(count), call!(nom::number::streaming::be_u32))
 );
-
-#[test]
-fn issue_768() {
-  named!(bit_vec8<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 8))));
-  named!(bit_vec4<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 4))));
-  named!(bit_vec3<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 3))));
-  named!(bit_vec11<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 11))));
-
-  let m: Vec<u8> = vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101];
-  assert_eq!(
-    bit_vec8(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101]))
-  );
-  assert_eq!(
-    bit_vec4(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![4, 6, 6, 1, 6, 10, 7, 9, 5, 6, 4, 2, 6, 9, 6, 2, 5, 6, 6, 10, 6, 5]))
-  );
-  assert_eq!(
-    bit_vec3(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![2, 1, 4, 6, 0, 5, 5, 2, 3, 6, 2, 5, 3, 1, 0, 2, 3, 2, 2, 6, 1, 1, 2, 6, 3, 2, 4, 6, 2]))
-  );
-  assert_eq!(
-    bit_vec11(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![563, 90, 1266, 1380, 308, 1417, 717, 613]))
-  );
-}
 
 /// This test is in a separate module to check that all required symbols are imported in
 /// `escaped_transform!()`. Without the module, the `use`-es of the current module would
 /// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
 mod issue_780 {
   named!(issue_780<&str, String>,
-    escaped_transform!(call!(::nom::alpha), '\\', tag!("n"))
+    escaped_transform!(call!(::nom::character::streaming::alpha1), '\\', tag!("n"))
   );
 }
 
@@ -323,7 +244,7 @@ named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{Err,be_f64};
+  use nom::{Err, number::streaming::be_f64, error::ErrorKind};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -332,8 +253,8 @@ mod issue_647 {
       v: Vec<f64>
   }
 
-  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<&'a [u8]>> {
-      separated_list_complete!(input, tag!(","),be_f64)
+  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
+      separated_list!(input, complete!(tag!(",")), complete!(be_f64))
   }
 
   named!(data<Input,Data>, map!(
@@ -355,6 +276,43 @@ named!(issue_775, take_till1!(|_| true));
 
 #[test]
 fn issue_848_overflow_incomplete_bits_to_bytes() {
-  named!(parser<&[u8], &[u8]>, bits!(bytes!(take!(0x2000000000000000))));
+  named!(take, take!(0x2000000000000000));
+  named!(parser<&[u8], &[u8]>, bits!(bytes!(take)));
   assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
+}
+
+#[test]
+fn issue_942() {
+  use nom::error::ParseError;
+  pub fn parser<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, usize, E> {
+    use nom::{character::complete::char, error::context, multi::many0_count};
+    many0_count(context("char_a", char('a')))(i)
+  }
+  assert_eq!(parser::<()>("aaa"), Ok(("", 3)));
+}
+
+#[test]
+fn issue_many_m_n_with_zeros() {
+    use nom::multi::many_m_n;
+    use nom::character::complete::char;
+    let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
+    assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
+}
+
+#[test]
+fn issue_1027_convert_error_panic_nonempty() {
+  use nom::error::{VerboseError, convert_error};
+  use nom::sequence::pair;
+  use nom::character::complete::char;
+
+  let input = "a";
+
+  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let err = match result.unwrap_err() {
+    Err::Error(e) => e,
+    _ => unreachable!(),
+  };
+
+  let msg = convert_error(&input, err);
+  assert_eq!(msg, "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n");
 }

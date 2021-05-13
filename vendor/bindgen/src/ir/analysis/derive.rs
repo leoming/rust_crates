@@ -3,17 +3,17 @@
 use std::fmt;
 
 use super::{generate_dependencies, ConstrainResult, MonotoneFramework};
-use ir::analysis::has_vtable::HasVtable;
-use ir::comp::CompKind;
-use ir::context::{BindgenContext, ItemId};
-use ir::derive::CanDerive;
-use ir::function::FunctionSig;
-use ir::item::{IsOpaque, Item};
-use ir::template::TemplateParameters;
-use ir::traversal::{EdgeKind, Trace};
-use ir::ty::RUST_DERIVE_IN_ARRAY_LIMIT;
-use ir::ty::{Type, TypeKind};
-use {Entry, HashMap, HashSet};
+use crate::ir::analysis::has_vtable::HasVtable;
+use crate::ir::comp::CompKind;
+use crate::ir::context::{BindgenContext, ItemId};
+use crate::ir::derive::CanDerive;
+use crate::ir::function::FunctionSig;
+use crate::ir::item::{IsOpaque, Item};
+use crate::ir::template::TemplateParameters;
+use crate::ir::traversal::{EdgeKind, Trace};
+use crate::ir::ty::RUST_DERIVE_IN_ARRAY_LIMIT;
+use crate::ir::ty::{Type, TypeKind};
+use crate::{Entry, HashMap, HashSet};
 
 /// Which trait to consider when doing the `CannotDerive` analysis.
 #[derive(Debug, Copy, Clone)]
@@ -240,25 +240,24 @@ impl<'ctx> CannotDerive<'ctx> {
                         self.derive_trait
                     );
                     return CanDerive::No;
-                } else {
-                    if self.derive_trait.can_derive_large_array() {
-                        trace!("    array can derive {}", self.derive_trait);
-                        return CanDerive::Yes;
-                    } else {
-                        if len <= RUST_DERIVE_IN_ARRAY_LIMIT {
-                            trace!(
-                                "    array is small enough to derive {}",
-                                self.derive_trait
-                            );
-                            return CanDerive::Yes;
-                        } else {
-                            trace!(
-                                "    array is too large to derive {}, but it may be implemented", self.derive_trait
-                            );
-                            return CanDerive::Manually;
-                        }
-                    }
                 }
+
+                if self.derive_trait.can_derive_large_array() {
+                    trace!("    array can derive {}", self.derive_trait);
+                    return CanDerive::Yes;
+                }
+
+                if len > RUST_DERIVE_IN_ARRAY_LIMIT {
+                    trace!(
+                        "    array is too large to derive {}, but it may be implemented", self.derive_trait
+                    );
+                    return CanDerive::Manually;
+                }
+                trace!(
+                    "    array is small enough to derive {}",
+                    self.derive_trait
+                );
+                return CanDerive::Yes;
             }
             TypeKind::Vector(t, len) => {
                 let inner_type =
@@ -362,6 +361,20 @@ impl<'ctx> CannotDerive<'ctx> {
                     return CanDerive::No;
                 }
 
+                // Bitfield units are always represented as arrays of u8, but
+                // they're not traced as arrays, so we need to check here
+                // instead.
+                if !self.derive_trait.can_derive_large_array() &&
+                    info.has_too_large_bitfield_unit() &&
+                    !item.is_opaque(self.ctx, &())
+                {
+                    trace!(
+                        "    cannot derive {} for comp with too large bitfield unit",
+                        self.derive_trait
+                    );
+                    return CanDerive::No;
+                }
+
                 let pred = self.derive_trait.consider_edge_comp();
                 return self.constrain_join(item, pred);
             }
@@ -432,11 +445,12 @@ impl DeriveTrait {
     fn not_by_name(&self, ctx: &BindgenContext, item: &Item) -> bool {
         match self {
             DeriveTrait::Copy => ctx.no_copy_by_name(item),
+            DeriveTrait::Debug => ctx.no_debug_by_name(item),
+            DeriveTrait::Default => ctx.no_default_by_name(item),
             DeriveTrait::Hash => ctx.no_hash_by_name(item),
             DeriveTrait::PartialEqOrPartialOrd => {
                 ctx.no_partialeq_by_name(item)
             }
-            _ => false,
         }
     }
 

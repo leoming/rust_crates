@@ -77,7 +77,7 @@ fn get_clang_libraries<P: AsRef<Path>>(directory: P) -> Vec<String> {
             .filter_map(|l| l.ok().and_then(|l| get_library_name(&l)))
             .collect()
     } else {
-        CLANG_LIBRARIES.iter().map(|l| l.to_string()).collect()
+        CLANG_LIBRARIES.iter().map(|l| (*l).to_string()).collect()
     }
 }
 
@@ -90,7 +90,7 @@ fn find() -> PathBuf {
     };
 
     let files = common::search_libclang_directories(&[name.into()], "LIBCLANG_STATIC_PATH");
-    if let Some((directory, _)) = files.into_iter().nth(0) {
+    if let Some((directory, _)) = files.into_iter().next() {
         directory
     } else {
         panic!("could not find any static libraries");
@@ -99,6 +99,8 @@ fn find() -> PathBuf {
 
 /// Find and link to `libclang` statically.
 pub fn link() {
+    let cep = common::CommandErrorPrinter::default();
+
     let directory = find();
 
     // Specify required Clang static libraries.
@@ -133,4 +135,6 @@ pub fn link() {
     } else if cfg!(target_os = "macos") {
         println!("cargo:rustc-flags=-l ffi -l ncurses -l c++ -l z");
     }
+
+    cep.discard();
 }

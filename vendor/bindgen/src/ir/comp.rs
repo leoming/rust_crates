@@ -6,18 +6,18 @@ use super::context::{BindgenContext, FunctionId, ItemId, TypeId, VarId};
 use super::dot::DotAttributes;
 use super::item::{IsOpaque, Item};
 use super::layout::Layout;
-// use super::ty::RUST_DERIVE_IN_ARRAY_LIMIT;
 use super::template::TemplateParameters;
 use super::traversal::{EdgeKind, Trace, Tracer};
-use clang;
-use codegen::struct_layout::{align_to, bytes_from_bits_pow2};
-use ir::derive::CanDeriveCopy;
-use parse::{ClangItemParser, ParseError};
+use super::ty::RUST_DERIVE_IN_ARRAY_LIMIT;
+use crate::clang;
+use crate::codegen::struct_layout::{align_to, bytes_from_bits_pow2};
+use crate::ir::derive::CanDeriveCopy;
+use crate::parse::{ClangItemParser, ParseError};
+use crate::HashMap;
 use peeking_take_while::PeekableExt;
 use std::cmp;
 use std::io;
 use std::mem;
-use HashMap;
 
 /// The kind of compound type.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -148,8 +148,8 @@ pub trait FieldMethods {
     /// If this is a bitfield, how many bits does it need?
     fn bitfield_width(&self) -> Option<u32>;
 
-    /// Is this field marked as `mutable`?
-    fn is_mutable(&self) -> bool;
+    /// Is this feild declared public?
+    fn is_public(&self) -> bool;
 
     /// Get the annotations for this field.
     fn annotations(&self) -> &Annotations;
@@ -356,7 +356,7 @@ impl Bitfield {
             if self.width() as u64 == mem::size_of::<u64>() as u64 * 8 {
                 u64::MAX
             } else {
-                ((1u64 << self.width()) - 1u64)
+                (1u64 << self.width()) - 1u64
             };
 
         unoffseted_mask << self.offset_into_unit()
@@ -415,8 +415,8 @@ impl FieldMethods for Bitfield {
         self.data.bitfield_width()
     }
 
-    fn is_mutable(&self) -> bool {
-        self.data.is_mutable()
+    fn is_public(&self) -> bool {
+        self.data.is_public()
     }
 
     fn annotations(&self) -> &Annotations {
@@ -443,7 +443,7 @@ impl RawField {
         comment: Option<String>,
         annotations: Option<Annotations>,
         bitfield_width: Option<u32>,
-        mutable: bool,
+        public: bool,
         offset: Option<usize>,
     ) -> RawField {
         RawField(FieldData {
@@ -452,7 +452,7 @@ impl RawField {
             comment,
             annotations: annotations.unwrap_or_default(),
             bitfield_width,
-            mutable,
+            public,
             offset,
         })
     }
@@ -475,8 +475,8 @@ impl FieldMethods for RawField {
         self.0.bitfield_width()
     }
 
-    fn is_mutable(&self) -> bool {
-        self.0.is_mutable()
+    fn is_public(&self) -> bool {
+        self.0.is_public()
     }
 
     fn annotations(&self) -> &Annotations {
@@ -496,7 +496,8 @@ impl FieldMethods for RawField {
 fn raw_fields_to_fields_and_bitfield_units<I>(
     ctx: &BindgenContext,
     raw_fields: I,
-) -> Result<Vec<Field>, ()>
+    packed: bool,
+) -> Result<(Vec<Field>, bool), ()>
 where
     I: IntoIterator<Item = RawField>,
 {
@@ -533,6 +534,7 @@ where
             &mut bitfield_unit_count,
             &mut fields,
             bitfields,
+            packed,
         )?;
     }
 
@@ -541,7 +543,7 @@ where
         "The above loop should consume all items in `raw_fields`"
     );
 
-    Ok(fields)
+    Ok((fields, bitfield_unit_count != 0))
 }
 
 /// Given a set of contiguous raw bitfields, group and allocate them into
@@ -551,6 +553,7 @@ fn bitfields_to_allocation_units<E, I>(
     bitfield_unit_count: &mut usize,
     fields: &mut E,
     raw_bitfields: I,
+    packed: bool,
 ) -> Result<(), ()>
 where
     E: Extend<Field>,
@@ -575,17 +578,22 @@ where
         unit_size_in_bits: usize,
         unit_align_in_bits: usize,
         bitfields: Vec<Bitfield>,
+        packed: bool,
     ) where
         E: Extend<Field>,
     {
         *bitfield_unit_count += 1;
-        let align = bytes_from_bits_pow2(unit_align_in_bits);
-        let size = align_to(unit_size_in_bits, align * 8) / 8;
+        let align = if packed {
+            1
+        } else {
+            bytes_from_bits_pow2(unit_align_in_bits)
+        };
+        let size = align_to(unit_size_in_bits, 8) / 8;
         let layout = Layout::new(size, align);
         fields.extend(Some(Field::Bitfields(BitfieldUnit {
             nth: *bitfield_unit_count,
-            layout: layout,
-            bitfields: bitfields,
+            layout,
+            bitfields,
         })));
     }
 
@@ -607,34 +615,39 @@ where
         let bitfield_align = bitfield_layout.align;
 
         let mut offset = unit_size_in_bits;
-        if is_ms_struct {
-            if unit_size_in_bits != 0 &&
-                (bitfield_width == 0 ||
-                    bitfield_width > unfilled_bits_in_unit)
-            {
-                // We've reached the end of this allocation unit, so flush it
-                // and its bitfields.
-                unit_size_in_bits = align_to(unit_size_in_bits, unit_align * 8);
-                flush_allocation_unit(
-                    fields,
-                    bitfield_unit_count,
-                    unit_size_in_bits,
-                    unit_align,
-                    mem::replace(&mut bitfields_in_unit, vec![]),
-                );
+        if !packed {
+            if is_ms_struct {
+                if unit_size_in_bits != 0 &&
+                    (bitfield_width == 0 ||
+                        bitfield_width > unfilled_bits_in_unit)
+                {
+                    // We've reached the end of this allocation unit, so flush it
+                    // and its bitfields.
+                    unit_size_in_bits =
+                        align_to(unit_size_in_bits, unit_align * 8);
+                    flush_allocation_unit(
+                        fields,
+                        bitfield_unit_count,
+                        unit_size_in_bits,
+                        unit_align,
+                        mem::replace(&mut bitfields_in_unit, vec![]),
+                        packed,
+                    );
 
-                // Now we're working on a fresh bitfield allocation unit, so reset
-                // the current unit size and alignment.
-                offset = 0;
-                unit_align = 0;
-            }
-        } else {
-            if offset != 0 &&
-                (bitfield_width == 0 ||
-                    (offset & (bitfield_align * 8 - 1)) + bitfield_width >
-                        bitfield_size * 8)
-            {
-                offset = align_to(offset, bitfield_align * 8);
+                    // Now we're working on a fresh bitfield allocation unit, so reset
+                    // the current unit size and alignment.
+                    offset = 0;
+                    unit_align = 0;
+                }
+            } else {
+                if offset != 0 &&
+                    (bitfield_width == 0 ||
+                        (offset & (bitfield_align * 8 - 1)) +
+                            bitfield_width >
+                            bitfield_size * 8)
+                {
+                    offset = align_to(offset, bitfield_align * 8);
+                }
             }
         }
 
@@ -677,6 +690,7 @@ where
             unit_size_in_bits,
             unit_align,
             bitfields_in_unit,
+            packed,
         );
     }
 
@@ -693,7 +707,10 @@ where
 #[derive(Debug)]
 enum CompFields {
     BeforeComputingBitfieldUnits(Vec<RawField>),
-    AfterComputingBitfieldUnits(Vec<Field>),
+    AfterComputingBitfieldUnits {
+        fields: Vec<Field>,
+        has_bitfield_units: bool,
+    },
     ErrorComputingBitfieldUnits,
 }
 
@@ -717,7 +734,7 @@ impl CompFields {
         }
     }
 
-    fn compute_bitfield_units(&mut self, ctx: &BindgenContext) {
+    fn compute_bitfield_units(&mut self, ctx: &BindgenContext, packed: bool) {
         let raws = match *self {
             CompFields::BeforeComputingBitfieldUnits(ref mut raws) => {
                 mem::replace(raws, vec![])
@@ -727,28 +744,28 @@ impl CompFields {
             }
         };
 
-        let result = raw_fields_to_fields_and_bitfield_units(ctx, raws);
+        let result = raw_fields_to_fields_and_bitfield_units(ctx, raws, packed);
 
         match result {
-            Ok(fields_and_units) => {
-                mem::replace(
-                    self,
-                    CompFields::AfterComputingBitfieldUnits(fields_and_units),
-                );
+            Ok((fields, has_bitfield_units)) => {
+                *self = CompFields::AfterComputingBitfieldUnits {
+                    fields,
+                    has_bitfield_units,
+                };
             }
             Err(()) => {
-                mem::replace(self, CompFields::ErrorComputingBitfieldUnits);
+                *self = CompFields::ErrorComputingBitfieldUnits;
             }
         }
     }
 
     fn deanonymize_fields(&mut self, ctx: &BindgenContext, methods: &[Method]) {
         let fields = match *self {
-            CompFields::AfterComputingBitfieldUnits(ref mut fields) => fields,
-            CompFields::ErrorComputingBitfieldUnits => {
-                // Nothing to do here.
-                return;
-            }
+            CompFields::AfterComputingBitfieldUnits {
+                ref mut fields, ..
+            } => fields,
+            // Nothing to do here.
+            CompFields::ErrorComputingBitfieldUnits => return,
             CompFields::BeforeComputingBitfieldUnits(_) => {
                 panic!("Not yet computed bitfield units.");
             }
@@ -808,9 +825,11 @@ impl CompFields {
                     }
 
                     anon_field_counter += 1;
-                    let generated_name =
-                        format!("__bindgen_anon_{}", anon_field_counter);
-                    *name = Some(generated_name);
+                    *name = Some(format!(
+                        "{}{}",
+                        ctx.options().anon_fields_prefix,
+                        anon_field_counter
+                    ));
                 }
                 Field::Bitfields(ref mut bu) => {
                     for bitfield in &mut bu.bitfields {
@@ -845,7 +864,7 @@ impl Trace for CompFields {
                     tracer.visit_kind(f.ty().into(), EdgeKind::Field);
                 }
             }
-            CompFields::AfterComputingBitfieldUnits(ref fields) => {
+            CompFields::AfterComputingBitfieldUnits { ref fields, .. } => {
                 for f in fields {
                     f.trace(context, tracer, &());
                 }
@@ -872,8 +891,8 @@ pub struct FieldData {
     /// If this field is a bitfield, and how many bits does it contain if it is.
     bitfield_width: Option<u32>,
 
-    /// If the C++ field is marked as `mutable`
-    mutable: bool,
+    /// If the C++ field is declared `public`
+    public: bool,
 
     /// The offset of the field (in bits)
     offset: Option<usize>,
@@ -896,8 +915,8 @@ impl FieldMethods for FieldData {
         self.bitfield_width
     }
 
-    fn is_mutable(&self) -> bool {
-        self.mutable
+    fn is_public(&self) -> bool {
+        self.public
     }
 
     fn annotations(&self) -> &Annotations {
@@ -935,6 +954,8 @@ pub struct Base {
     pub kind: BaseKind,
     /// Name of the field in which this base should be stored.
     pub field_name: String,
+    /// Whether this base is inherited from publically.
+    pub is_pub: bool,
 }
 
 impl Base {
@@ -961,6 +982,11 @@ impl Base {
         }
 
         true
+    }
+
+    /// Whether this base is inherited from publically.
+    pub fn is_public(&self) -> bool {
+        self.is_pub
     }
 }
 
@@ -1047,7 +1073,7 @@ impl CompInfo {
     /// Construct a new compound type.
     pub fn new(kind: CompKind) -> Self {
         CompInfo {
-            kind: kind,
+            kind,
             fields: CompFields::default(),
             template_params: vec![],
             methods: vec![],
@@ -1110,11 +1136,41 @@ impl CompInfo {
     pub fn fields(&self) -> &[Field] {
         match self.fields {
             CompFields::ErrorComputingBitfieldUnits => &[],
-            CompFields::AfterComputingBitfieldUnits(ref fields) => fields,
+            CompFields::AfterComputingBitfieldUnits { ref fields, .. } => {
+                fields
+            }
             CompFields::BeforeComputingBitfieldUnits(_) => {
                 panic!("Should always have computed bitfield units first");
             }
         }
+    }
+
+    fn has_bitfields(&self) -> bool {
+        match self.fields {
+            CompFields::ErrorComputingBitfieldUnits => false,
+            CompFields::AfterComputingBitfieldUnits {
+                has_bitfield_units,
+                ..
+            } => has_bitfield_units,
+            CompFields::BeforeComputingBitfieldUnits(_) => {
+                panic!("Should always have computed bitfield units first");
+            }
+        }
+    }
+
+    /// Returns whether we have a too large bitfield unit, in which case we may
+    /// not be able to derive some of the things we should be able to normally
+    /// derive.
+    pub fn has_too_large_bitfield_unit(&self) -> bool {
+        if !self.has_bitfields() {
+            return false;
+        }
+        self.fields().iter().any(|field| match *field {
+            Field::DataMember(..) => false,
+            Field::Bitfields(ref unit) => {
+                unit.layout.size > RUST_DERIVE_IN_ARRAY_LIMIT
+            }
+        })
     }
 
     /// Does this type have any template parameters that aren't types
@@ -1126,7 +1182,7 @@ impl CompInfo {
     /// Do we see a virtual function during parsing?
     /// Get the has_own_virtual_method boolean.
     pub fn has_own_virtual_method(&self) -> bool {
-        return self.has_own_virtual_method;
+        self.has_own_virtual_method
     }
 
     /// Did we see a destructor when parsing this type?
@@ -1201,7 +1257,7 @@ impl CompInfo {
         let mut maybe_anonymous_struct_field = None;
         cursor.visit(|cur| {
             if cur.kind() != CXCursor_FieldDecl {
-                if let Some((ty, clang_ty, offset)) =
+                if let Some((ty, clang_ty, public, offset)) =
                     maybe_anonymous_struct_field.take()
                 {
                     if cur.kind() == CXCursor_TypedefDecl &&
@@ -1214,7 +1270,7 @@ impl CompInfo {
                         // nothing.
                     } else {
                         let field = RawField::new(
-                            None, ty, None, None, None, false, offset,
+                            None, ty, None, None, None, public, offset,
                         );
                         ci.fields.append_raw_field(field);
                     }
@@ -1223,7 +1279,7 @@ impl CompInfo {
 
             match cur.kind() {
                 CXCursor_FieldDecl => {
-                    if let Some((ty, clang_ty, offset)) =
+                    if let Some((ty, clang_ty, public, offset)) =
                         maybe_anonymous_struct_field.take()
                     {
                         let mut used = false;
@@ -1233,9 +1289,10 @@ impl CompInfo {
                             }
                             CXChildVisit_Continue
                         });
+
                         if !used {
                             let field = RawField::new(
-                                None, ty, None, None, None, false, offset,
+                                None, ty, None, None, None, public, offset,
                             );
                             ci.fields.append_raw_field(field);
                         }
@@ -1252,7 +1309,7 @@ impl CompInfo {
                     let comment = cur.raw_comment();
                     let annotations = Annotations::new(&cur);
                     let name = cur.spelling();
-                    let is_mutable = cursor.is_mutable_field();
+                    let is_public = cur.public_accessible();
                     let offset = cur.offset_of_field().ok();
 
                     // Name can be empty if there are bitfields, for example,
@@ -1270,7 +1327,7 @@ impl CompInfo {
                         comment,
                         annotations,
                         bit_width,
-                        is_mutable,
+                        is_public,
                         offset,
                     );
                     ci.fields.append_raw_field(field);
@@ -1327,9 +1384,11 @@ impl CompInfo {
                         cur.kind() != CXCursor_EnumDecl
                     {
                         let ty = cur.cur_type();
+                        let public = cur.public_accessible();
                         let offset = cur.offset_of_field().ok();
+
                         maybe_anonymous_struct_field =
-                            Some((inner, ty, offset));
+                            Some((inner, ty, public, offset));
                     }
                 }
                 CXCursor_PackedAttr => {
@@ -1360,8 +1419,10 @@ impl CompInfo {
                         Item::from_ty_or_ref(cur.cur_type(), cur, None, ctx);
                     ci.base_members.push(Base {
                         ty: type_id,
-                        kind: kind,
-                        field_name: field_name,
+                        kind,
+                        field_name,
+                        is_pub: cur.access_specifier() ==
+                            clang_sys::CX_CXXPublic,
                     });
                 }
                 CXCursor_Constructor | CXCursor_Destructor |
@@ -1477,9 +1538,9 @@ impl CompInfo {
             CXChildVisit_Continue
         });
 
-        if let Some((ty, _, offset)) = maybe_anonymous_struct_field {
+        if let Some((ty, _, public, offset)) = maybe_anonymous_struct_field {
             let field =
-                RawField::new(None, ty, None, None, None, false, offset);
+                RawField::new(None, ty, None, None, None, public, offset);
             ci.fields.append_raw_field(field);
         }
 
@@ -1527,7 +1588,7 @@ impl CompInfo {
     pub fn is_packed(
         &self,
         ctx: &BindgenContext,
-        layout: &Option<Layout>,
+        layout: Option<&Layout>,
     ) -> bool {
         if self.packed_attr {
             return true;
@@ -1535,7 +1596,7 @@ impl CompInfo {
 
         // Even though `libclang` doesn't expose `#pragma packed(...)`, we can
         // detect it through its effects.
-        if let Some(ref parent_layout) = *layout {
+        if let Some(parent_layout) = layout {
             if self.fields().iter().any(|f| match *f {
                 Field::Bitfields(ref unit) => {
                     unit.layout().align > parent_layout.align
@@ -1566,7 +1627,9 @@ impl CompInfo {
 
     /// Compute this compound structure's bitfield allocation units.
     pub fn compute_bitfield_units(&mut self, ctx: &BindgenContext) {
-        self.fields.compute_bitfield_units(ctx);
+        // TODO(emilio): If we could detect #pragma packed here we'd fix layout
+        // tests in divide-by-zero-in-struct-layout.rs
+        self.fields.compute_bitfield_units(ctx, self.packed_attr)
     }
 
     /// Assign for each anonymous field a generated name.
@@ -1688,7 +1751,7 @@ impl IsOpaque for CompInfo {
             //
             // See https://github.com/rust-lang/rust-bindgen/issues/537 and
             // https://github.com/rust-lang/rust/issues/33158
-            if self.is_packed(ctx, layout) &&
+            if self.is_packed(ctx, layout.as_ref()) &&
                 layout.map_or(false, |l| l.align > 1)
             {
                 warn!("Found a type that is both packed and aligned to greater than \

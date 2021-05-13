@@ -22,42 +22,47 @@
 
 set -euox pipefail
 
-if [ -z ${ABSEIL_ROOT:-} ]; then
+if [[ -z ${ABSEIL_ROOT:-} ]]; then
   ABSEIL_ROOT="$(realpath $(dirname ${0})/..)"
 fi
 
-if [ -z ${ABSL_CMAKE_CXX_STANDARDS:-} ]; then
+if [[ -z ${ABSL_CMAKE_CXX_STANDARDS:-} ]]; then
   ABSL_CMAKE_CXX_STANDARDS="11 14 17"
 fi
 
-if [ -z ${ABSL_CMAKE_BUILD_TYPES:-} ]; then
+if [[ -z ${ABSL_CMAKE_BUILD_TYPES:-} ]]; then
   ABSL_CMAKE_BUILD_TYPES="Debug Release"
 fi
 
-readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/alpine:20191016"
+if [[ -z ${ABSL_CMAKE_BUILD_SHARED:-} ]]; then
+  ABSL_CMAKE_BUILD_SHARED="OFF ON"
+fi
+
+source "${ABSEIL_ROOT}/ci/linux_docker_containers.sh"
+readonly DOCKER_CONTAINER=${LINUX_ALPINE_CONTAINER}
 
 for std in ${ABSL_CMAKE_CXX_STANDARDS}; do
   for compilation_mode in ${ABSL_CMAKE_BUILD_TYPES}; do
-    echo "--------------------------------------------------------------------"
-    echo "Testing with CMAKE_BUILD_TYPE=${compilation_mode} and -std=c++${std}"
-
-    time docker run \
-      --volume="${ABSEIL_ROOT}:/abseil-cpp:ro" \
-      --workdir=/abseil-cpp \
-      --tmpfs=/buildfs:exec \
-      --cap-add=SYS_PTRACE \
-      --rm \
-      -e CFLAGS="-Werror" \
-      -e CXXFLAGS="-Werror" \
-      "${DOCKER_CONTAINER}" \
-      /bin/sh -c "
-        cd /buildfs && \
-        cmake /abseil-cpp \
-          -DABSL_USE_GOOGLETEST_HEAD=ON \
-          -DABSL_RUN_TESTS=ON \
-          -DCMAKE_BUILD_TYPE=${compilation_mode} \
-          -DCMAKE_CXX_STANDARD=${std} && \
-        make -j$(nproc) && \
-        ctest -j$(nproc) --output-on-failure"
+    for build_shared in ${ABSL_CMAKE_BUILD_SHARED}; do
+      time docker run \
+        --volume="${ABSEIL_ROOT}:/abseil-cpp:ro" \
+        --workdir=/abseil-cpp \
+        --tmpfs=/buildfs:exec \
+        --cap-add=SYS_PTRACE \
+        --rm \
+        -e CFLAGS="-Werror" \
+        -e CXXFLAGS="-Werror" \
+        "${DOCKER_CONTAINER}" \
+        /bin/sh -c "
+          cd /buildfs && \
+          cmake /abseil-cpp \
+            -DABSL_USE_GOOGLETEST_HEAD=ON \
+            -DABSL_RUN_TESTS=ON \
+            -DCMAKE_BUILD_TYPE=${compilation_mode} \
+            -DCMAKE_CXX_STANDARD=${std} \
+            -DCMAKE_MODULE_LINKER_FLAGS=\"-Wl,--no-undefined\" && \
+          make -j$(nproc) && \
+          ctest -j$(nproc) --output-on-failure"
+    done
   done
 done

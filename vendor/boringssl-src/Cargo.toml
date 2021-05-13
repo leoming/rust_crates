@@ -13,7 +13,7 @@
 [package]
 edition = "2018"
 name = "boringssl-src"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jay Lee <BusyJayLee@gmail.com>"]
 exclude = ["boringssl/crypto_test_data.cc", "boringssl/src/fuzz", "boringssl/src/crypto/cipher_extra/test", "boringssl/src/crypto/fipsmodule/*.png", "boringssl/src/crypto/fipsmodule/policydocs/*", "boringssl/src/third_party/wycheproof_testvectors", "boringssl/src/third_party/googletest", "testcrate", ".github"]
 description = "A crate for building boringssl.\n"
