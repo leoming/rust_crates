@@ -16,6 +16,7 @@ env_logger = "0.8"
 futures = "0.3.13"
 grpcio = { version = "0.7", features = ["protobuf", "protobuf-codec", "openssl"] }
 grpcio-sys = { version = "*", features = ["openssl"] }
+inotify = "0.9"
 lazy_static = "1.4"
 log = "0.4"
 nix = "0.19"
