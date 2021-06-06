@@ -29,7 +29,7 @@ protoc-grpcio = "2.0"
 protoc-rust = "2.0"
 quote = "1.0.8"
 rustyline = "8.0"
-thiserror = "=1.0.23"
+thiserror = "1.0.23"
 syn = { version = "1.0.58", features = ['default', 'full'] }
 tokio = { version = "1.0", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'memchr', 'mio', 'net', 'num_cpus', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
 tokio-stream = "0.1"
