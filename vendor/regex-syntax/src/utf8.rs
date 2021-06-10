@@ -15,7 +15,7 @@ whether a particular byte sequence was a Cyrillic character. One possible
 scalar value range is `[0400-04FF]`. The set of allowed bytes for this
 range can be expressed as a sequence of byte ranges:
 
-```ignore
+```text
 [D0-D3][80-BF]
 ```
 
@@ -32,7 +32,7 @@ for example, `04FF` (because its last byte, `BF` isn't in the range `80-AF`).
 
 Instead, you need multiple sequences of byte ranges:
 
-```ignore
+```text
 [D0-D3][80-BF]  # matches codepoints 0400-04FF
 [D4][80-AF]     # matches codepoints 0500-052F
 ```
@@ -41,7 +41,7 @@ This gets even more complicated if you want bigger ranges, particularly if
 they naively contain surrogate codepoints. For example, the sequence of byte
 ranges for the basic multilingual plane (`[0000-FFFF]`) look like this:
 
-```ignore
+```text
 [0-7F]
 [C2-DF][80-BF]
 [E0][A0-BF][80-BF]
@@ -55,7 +55,7 @@ UTF-8, including encodings of surrogate codepoints.
 
 And, of course, for all of Unicode (`[000000-10FFFF]`):
 
-```ignore
+```text
 [0-7F]
 [C2-DF][80-BF]
 [E0][A0-BF][80-BF]
@@ -157,13 +157,13 @@ impl Utf8Sequence {
     ///
     /// For example, if this corresponds to the following sequence:
     ///
-    /// ```ignore
+    /// ```text
     /// [D0-D3][80-BF]
     /// ```
     ///
     /// Then after reversal, it will be
     ///
-    /// ```ignore
+    /// ```text
     /// [80-BF][D0-D3]
     /// ```
     ///
@@ -203,7 +203,7 @@ impl<'a> IntoIterator for &'a Utf8Sequence {
 }
 
 impl fmt::Debug for Utf8Sequence {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::Utf8Sequence::*;
         match *self {
             One(ref r) => write!(f, "{:?}", r),
@@ -237,7 +237,7 @@ impl Utf8Range {
 }
 
 impl fmt::Debug for Utf8Range {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.start == self.end {
             write!(f, "[{:X}]", self.start)
         } else {
@@ -331,7 +331,7 @@ struct ScalarRange {
 }
 
 impl fmt::Debug for ScalarRange {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ScalarRange({:X}, {:X})", self.start, self.end)
     }
 }
@@ -457,7 +457,7 @@ fn max_scalar_value(nbytes: usize) -> u32 {
 mod tests {
     use std::char;
 
-    use utf8::{Utf8Range, Utf8Sequences};
+    use crate::utf8::{Utf8Range, Utf8Sequences};
 
     fn rutf8(s: u8, e: u8) -> Utf8Range {
         Utf8Range::new(s, e)
@@ -504,7 +504,7 @@ mod tests {
 
     #[test]
     fn bmp() {
-        use utf8::Utf8Sequence::*;
+        use crate::utf8::Utf8Sequence::*;
 
         let seqs = Utf8Sequences::new('\u{0}', '\u{FFFF}').collect::<Vec<_>>();
         assert_eq!(
@@ -538,7 +538,7 @@ mod tests {
 
     #[test]
     fn reverse() {
-        use utf8::Utf8Sequence::*;
+        use crate::utf8::Utf8Sequence::*;
 
         let mut s = One(rutf8(0xA, 0xB));
         s.reverse();

@@ -7,10 +7,10 @@ macro_rules! define_set {
             use std::slice;
             use std::vec;
 
-            use error::Error;
-            use exec::Exec;
-            use re_builder::$builder_mod::RegexSetBuilder;
-            use re_trait::RegularExpression;
+            use crate::error::Error;
+            use crate::exec::Exec;
+            use crate::re_builder::$builder_mod::RegexSetBuilder;
+            use crate::re_trait::RegularExpression;
 
 /// Match multiple (possibly overlapping) regular expressions in a single scan.
 ///
@@ -43,7 +43,7 @@ $(#[$doc_regexset_example])*
 /// Note that it would be possible to adapt the above example to using `Regex`
 /// with an expression like:
 ///
-/// ```ignore
+/// ```text
 /// (?P<email>[a-z]+@(?P<email_domain>[a-z]+[.](com|org|net)))|(?P<domain>[a-z]+[.](com|org|net))
 /// ```
 ///
@@ -292,7 +292,7 @@ impl SetMatches {
     /// This will always produces matches in ascending order of index, where
     /// the index corresponds to the index of the regex that matched with
     /// respect to its position when initially building the set.
-    pub fn iter(&self) -> SetMatchesIter {
+    pub fn iter(&self) -> SetMatchesIter<'_> {
         SetMatchesIter((&*self.matches).into_iter().enumerate())
     }
 }
@@ -405,7 +405,7 @@ impl From<Exec> for RegexSet {
 }
 
 impl fmt::Debug for RegexSet {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "RegexSet({:?})", self.0.regex_strings())
     }
 }

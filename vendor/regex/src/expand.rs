@@ -1,12 +1,12 @@
 use std::str;
 
-use find_byte::find_byte;
+use crate::find_byte::find_byte;
 
-use re_bytes;
-use re_unicode;
+use crate::re_bytes;
+use crate::re_unicode;
 
 pub fn expand_str(
-    caps: &re_unicode::Captures,
+    caps: &re_unicode::Captures<'_>,
     mut replacement: &str,
     dst: &mut String,
 ) {
@@ -48,7 +48,7 @@ pub fn expand_str(
 }
 
 pub fn expand_bytes(
-    caps: &re_bytes::Captures,
+    caps: &re_bytes::Captures<'_>,
     mut replacement: &[u8],
     dst: &mut Vec<u8>,
 ) {
@@ -125,7 +125,7 @@ impl From<usize> for Ref<'static> {
 /// starting at the beginning of `replacement`.
 ///
 /// If no such valid reference could be found, None is returned.
-fn find_cap_ref(replacement: &[u8]) -> Option<CaptureRef> {
+fn find_cap_ref(replacement: &[u8]) -> Option<CaptureRef<'_>> {
     let mut i = 0;
     let rep: &[u8] = replacement.as_ref();
     if rep.len() <= 1 || rep[0] != b'$' {
@@ -144,7 +144,8 @@ fn find_cap_ref(replacement: &[u8]) -> Option<CaptureRef> {
     }
     // We just verified that the range 0..cap_end is valid ASCII, so it must
     // therefore be valid UTF-8. If we really cared, we could avoid this UTF-8
-    // check with either unsafe or by parsing the number straight from &[u8].
+    // check via an unchecked conversion or by parsing the number straight from
+    // &[u8].
     let cap =
         str::from_utf8(&rep[i..cap_end]).expect("valid UTF-8 capture name");
     Some(CaptureRef {
@@ -156,7 +157,7 @@ fn find_cap_ref(replacement: &[u8]) -> Option<CaptureRef> {
     })
 }
 
-fn find_cap_ref_braced(rep: &[u8], mut i: usize) -> Option<CaptureRef> {
+fn find_cap_ref_braced(rep: &[u8], mut i: usize) -> Option<CaptureRef<'_>> {
     let start = i;
     while rep.get(i).map_or(false, |&b| b != b'}') {
         i += 1;
