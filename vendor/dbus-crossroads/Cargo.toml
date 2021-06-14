@@ -13,7 +13,7 @@
 [package]
 edition = "2018"
 name = "dbus-crossroads"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["David Henningsson <diwic@ubuntu.com>"]
 description = "Framework for writing D-Bus method handlers"
 documentation = "http://docs.rs/dbus-crossroads"
@@ -23,15 +23,6 @@ categories = ["os::unix-apis", "api-bindings"]
 license = "Apache-2.0/MIT"
 repository = "https://github.com/diwic/dbus-rs/"
 [dependencies.dbus]
-version = "0.9"
-[badges.is-it-maintained-issue-resolution]
-repository = "diwic/dbus-rs"
-
-[badges.is-it-maintained-open-issues]
-repository = "diwic/dbus-rs"
-
+version = "0.9.3"
 [badges.maintenance]
 status = "actively-developed"
-
-[badges.travis-ci]
-repository = "diwic/dbus-rs"

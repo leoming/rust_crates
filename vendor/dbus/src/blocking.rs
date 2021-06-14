@@ -38,6 +38,14 @@ pub mod stdintf {
             NotOwner = 3,
         }
 
+        #[derive(Debug, PartialEq, Eq, Copy, Clone)]
+        pub enum EmitsChangedSignal {
+            True,
+            Invalidates,
+            Const,
+            False,
+        }
+
         pub (crate) fn request_name<S: crate::blocking::BlockingSender>(s: &S, name: &str, allow_replacement: bool, replace_existing: bool, do_not_queue: bool)
             -> Result<RequestNameReply, crate::Error> {
             let flags: u32 =
@@ -65,6 +73,27 @@ pub mod stdintf {
             all.iter().find(|x| **x as u32 == r).copied().ok_or_else(||
                 crate::Error::new_failed("Invalid reply from DBus server")
             )
+        }
+
+        use crate::arg;
+        impl PropertiesPropertiesChanged {
+            pub fn add_prop<F: FnOnce() -> Box<dyn arg::RefArg>>(&mut self, prop_name: &str, emits: EmitsChangedSignal, f: F) -> bool {
+                match emits {
+                    EmitsChangedSignal::False => { false },
+                    EmitsChangedSignal::Invalidates => {
+                        if !self.invalidated_properties.iter().any(|x| x == prop_name) {
+                            self.invalidated_properties.push(prop_name.into())
+                        }
+                        true
+                    }
+                    EmitsChangedSignal::True => {
+                        let val = f();
+                        self.changed_properties.insert(prop_name.into(), arg::Variant(val));
+                        true
+                    }
+                    EmitsChangedSignal::Const => panic!("Called add_prop with EmitsChangedSignal::Const")
+                }
+            }
         }
     }
 
@@ -427,9 +456,12 @@ fn test_peer() {
 
     let s2 = j.join().unwrap();
 
-    let proxy = c.with_proxy("org.a11y.Bus", "/org/a11y/bus", Duration::from_secs(5));
-    let (s1,): (String,) = proxy.method_call("org.freedesktop.DBus.Peer", "GetMachineId", ()).unwrap();
+    #[cfg(unix)]
+    {
+        let proxy = c.with_proxy("org.a11y.Bus", "/org/a11y/bus", Duration::from_secs(5));
+        let (s1,): (String,) = proxy.method_call("org.freedesktop.DBus.Peer", "GetMachineId", ()).unwrap();
 
-    assert_eq!(s1, s2);
+        assert_eq!(s1, s2);
+    }
 
 }

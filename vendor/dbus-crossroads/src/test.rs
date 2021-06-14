@@ -1,7 +1,7 @@
 use crate::*;
 use dbus::Message;
 use std::cell::RefCell;
-use dbus::arg::{Variant, RefArg};
+use dbus::arg::{Variant, RefArg, PropMap};
 use std::collections::HashMap;
 
 #[test]
@@ -33,6 +33,8 @@ fn dispatch_helper(cr: &mut Crossroads, msg: Message) -> Message {
 #[test]
 fn score() {
     struct Score(u16, u32);
+    use dbus::blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged as PPC;
+    use dbus::message::SignalArgs;
 
     let mut cr = Crossroads::new();
 
@@ -42,9 +44,16 @@ fn score() {
             score.1 += 1;
             Ok((score.0, score.1))
         });
-        b.property::<u16, _>("Score")
+
+        let prop_ch = b.property::<u16, _>("Score")
             .get(|_, score| { Ok(score.0) })
-            .set(|_, score, val| { score.0 = val; Ok(Some(val)) });
+            .set(|_, score, val| { score.0 = val; Ok(Some(val)) })
+            .changed_msg_fn();
+        let msg = prop_ch(&"/somePath".into(), &734u16).unwrap();
+        let ppc = PPC::from_message(&msg).unwrap();
+        assert_eq!(&*ppc.interface_name, "com.example.dbusrs.crossroads.score");
+        assert_eq!(ppc.changed_properties.get("Score").unwrap().0.as_u64(), Some(734));
+
     });
 
     cr.insert("/", &[iface], Score(2, 0));
@@ -57,8 +66,6 @@ fn score() {
     assert_eq!(r[0].msg_type(), dbus::message::MessageType::MethodReturn);
     assert_eq!(r[0].get_reply_serial().unwrap(), 57);
 
-    use dbus::blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged as PPC;
-    use dbus::message::SignalArgs;
     let ppc = PPC::from_message(&r[1]).unwrap();
     assert_eq!(&*ppc.interface_name, "com.example.dbusrs.crossroads.score");
     assert_eq!(ppc.changed_properties.get("Score").unwrap().0.as_u64(), Some(7));
@@ -204,9 +211,36 @@ fn object_manager() {
         "org.freedesktop.DBus.ObjectManager", "GetManagedObjects").unwrap();
     let r = dispatch_helper(&mut cr, msg);
 
-    type GMO = HashMap<dbus::Path<'static>, HashMap<String, HashMap<String, Variant<Box<dyn RefArg + 'static>>>>>;
+    type GMO = HashMap<dbus::Path<'static>, HashMap<String, PropMap>>;
     let mo: GMO = r.read1().unwrap();
     dbg!(&mo);
     let v = &mo[&"/list/grannysmith".into()]["com.example.dbusrs.weight"]["Weight"];
     assert_eq!(v.0.as_u64().unwrap(), 20);
+}
+
+#[test]
+fn object_manager_root() {
+    let bus = dbus::blocking::Connection::new_session().unwrap();
+    bus.request_name("com.example.dbusrs.objmgr_root", false, false, false).unwrap();
+    let mut cr = Crossroads::new();
+    cr.set_object_manager_support(Some(std::sync::Arc::new(std::sync::Mutex::new(vec!()))));
+    cr.insert("/", &[cr.object_manager()], ());
+    cr.insert("/foo", &[], ());
+
+    use dbus::channel::MatchingReceiver;
+    let shared_cr = std::sync::Arc::new(std::sync::Mutex::new(cr));
+    let altcr = shared_cr.clone();
+    bus.start_receive(dbus::message::MatchRule::new_method_call(), Box::new(move |msg, conn| {
+	altcr.lock().unwrap().handle_message(msg, conn).unwrap();
+	true
+    }));
+
+    let service_thread = std::thread::spawn(move || {
+        bus.process(std::time::Duration::new(u64::MAX, 0)).unwrap();
+    });
+
+    let msg = Message::new_method_call("com.example.dbusrs.objmgr_root", "/",
+        "org.freedesktop.DBus.ObjectManager", "GetManagedObjects").unwrap();
+    dispatch_helper(&mut shared_cr.lock().unwrap(), msg);
+    service_thread.join().unwrap();
 }
