@@ -160,11 +160,22 @@ def apply_patches(patches_path, vendor_path):
     for key in checksums_for.keys():
         _rerun_checksums(os.path.join(vendor_path, key))
 
+def run_cargo_vendor(working_dir):
+    """Runs cargo vendor.
+
+    Args:
+        working_dir: Directory to run inside. This should be the directory where
+                    Cargo.toml is kept.
+    """
+    subprocess.check_call(["cargo", "vendor"], cwd=working_dir)
 
 def main():
     current_path = pathlib.Path(__file__).parent.absolute()
     patches = os.path.join(current_path, "patches")
     vendor = os.path.join(current_path, "vendor")
+
+    # First, actually run cargo vendor
+    run_cargo_vendor(current_path)
 
     # Order matters here:
     # - Apply patches (also re-calculates checksums)
