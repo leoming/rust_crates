@@ -4,7 +4,7 @@ use super::super::codegen::{EnumVariation, CONSTIFIED_ENUM_MODULE_REPR_NAME};
 use super::analysis::{HasVtable, HasVtableResult, Sizedness, SizednessResult};
 use super::annotations::Annotations;
 use super::comment;
-use super::comp::MethodKind;
+use super::comp::{CompKind, MethodKind};
 use super::context::{BindgenContext, ItemId, PartialType, TypeId};
 use super::derive::{
     CanDeriveCopy, CanDeriveDebug, CanDeriveDefault, CanDeriveEq,
@@ -273,10 +273,10 @@ impl Trace for Item {
     where
         T: Tracer,
     {
-        // Even if this item is blacklisted/hidden, we want to trace it. It is
+        // Even if this item is blocklisted/hidden, we want to trace it. It is
         // traversal iterators' consumers' responsibility to filter items as
         // needed. Generally, this filtering happens in the implementation of
-        // `Iterator` for `WhitelistedItems`. Fully tracing blacklisted items is
+        // `Iterator` for `allowlistedItems`. Fully tracing blocklisted items is
         // necessary for things like the template parameter usage analysis to
         // function correctly.
 
@@ -301,12 +301,12 @@ impl Trace for Item {
             }
             ItemKind::Module(_) => {
                 // Module -> children edges are "weak", and we do not want to
-                // trace them. If we did, then whitelisting wouldn't work as
+                // trace them. If we did, then allowlisting wouldn't work as
                 // expected: everything in every module would end up
-                // whitelisted.
+                // allowlisted.
                 //
                 // TODO: make a new edge kind for module -> children edges and
-                // filter them during whitelisting traversals.
+                // filter them during allowlisting traversals.
             }
         }
     }
@@ -400,9 +400,9 @@ pub struct Item {
     /// considerably faster in those cases.
     canonical_name: LazyCell<String>,
 
-    /// The path to use for whitelisting and other name-based checks, as
-    /// returned by `path_for_whitelisting`, lazily constructed.
-    path_for_whitelisting: LazyCell<Vec<String>>,
+    /// The path to use for allowlisting and other name-based checks, as
+    /// returned by `path_for_allowlisting`, lazily constructed.
+    path_for_allowlisting: LazyCell<Vec<String>>,
 
     /// A doc comment over the item, if any.
     comment: Option<String>,
@@ -440,7 +440,7 @@ impl Item {
             local_id: LazyCell::new(),
             next_child_local_id: Cell::new(1),
             canonical_name: LazyCell::new(),
-            path_for_whitelisting: LazyCell::new(),
+            path_for_allowlisting: LazyCell::new(),
             parent_id: parent_id,
             comment: comment,
             annotations: annotations.unwrap_or_default(),
@@ -623,10 +623,10 @@ impl Item {
         &self.annotations
     }
 
-    /// Whether this item should be blacklisted.
+    /// Whether this item should be blocklisted.
     ///
     /// This may be due to either annotations or to other kind of configuration.
-    pub fn is_blacklisted(&self, ctx: &BindgenContext) -> bool {
+    pub fn is_blocklisted(&self, ctx: &BindgenContext) -> bool {
         debug_assert!(
             ctx.in_codegen_phase(),
             "You're not supposed to call this yet"
@@ -635,18 +635,18 @@ impl Item {
             return true;
         }
 
-        let path = self.path_for_whitelisting(ctx);
+        let path = self.path_for_allowlisting(ctx);
         let name = path[1..].join("::");
-        ctx.options().blacklisted_items.matches(&name) ||
+        ctx.options().blocklisted_items.matches(&name) ||
             match self.kind {
                 ItemKind::Type(..) => {
-                    ctx.options().blacklisted_types.matches(&name) ||
+                    ctx.options().blocklisted_types.matches(&name) ||
                         ctx.is_replaced_type(&path, self.id)
                 }
                 ItemKind::Function(..) => {
-                    ctx.options().blacklisted_functions.matches(&name)
+                    ctx.options().blocklisted_functions.matches(&name)
                 }
-                // TODO: Add constant / namespace blacklisting?
+                // TODO: Add constant / namespace blocklisting?
                 ItemKind::Var(..) | ItemKind::Module(..) => false,
             }
     }
@@ -904,6 +904,12 @@ impl Item {
             names.push(base_name);
         }
 
+        if ctx.options().c_naming {
+            if let Some(prefix) = self.c_naming_prefix() {
+                names.insert(0, prefix.to_string());
+            }
+        }
+
         let name = names.join("_");
 
         let name = if opt.user_mangled == UserMangled::Yes {
@@ -1012,10 +1018,10 @@ impl Item {
         }
     }
 
-    /// Returns the path we should use for whitelisting / blacklisting, which
+    /// Returns the path we should use for allowlisting / blocklisting, which
     /// doesn't include user-mangling.
-    pub fn path_for_whitelisting(&self, ctx: &BindgenContext) -> &Vec<String> {
-        self.path_for_whitelisting
+    pub fn path_for_allowlisting(&self, ctx: &BindgenContext) -> &Vec<String> {
+        self.path_for_allowlisting
             .borrow_with(|| self.compute_path(ctx, UserMangled::No))
     }
 
@@ -1054,6 +1060,23 @@ impl Item {
         path.reverse();
         path
     }
+
+    /// Returns a prefix for the canonical name when C naming is enabled.
+    fn c_naming_prefix(&self) -> Option<&str> {
+        let ty = match self.kind {
+            ItemKind::Type(ref ty) => ty,
+            _ => return None,
+        };
+
+        Some(match ty.kind() {
+            TypeKind::Comp(ref ci) => match ci.kind() {
+                CompKind::Struct => "struct",
+                CompKind::Union => "union",
+            },
+            TypeKind::Enum(..) => "enum",
+            _ => return None,
+        })
+    }
 }
 
 impl<T> IsOpaque for T
@@ -1081,7 +1104,7 @@ impl IsOpaque for Item {
         );
         self.annotations.opaque() ||
             self.as_type().map_or(false, |ty| ty.is_opaque(ctx, self)) ||
-            ctx.opaque_by_name(&self.path_for_whitelisting(ctx))
+            ctx.opaque_by_name(&self.path_for_allowlisting(ctx))
     }
 }
 
@@ -1390,7 +1413,7 @@ impl ClangItemParser for Item {
         if cursor.kind() == CXCursor_UnexposedDecl {
             Err(ParseError::Recurse)
         } else {
-            // We whitelist cursors here known to be unhandled, to prevent being
+            // We allowlist cursors here known to be unhandled, to prevent being
             // too noisy about this.
             match cursor.kind() {
                 CXCursor_MacroDefinition |
@@ -1415,9 +1438,7 @@ impl ClangItemParser for Item {
                             );
                         }
                         Some(filename) => {
-                            if let Some(cb) = ctx.parse_callbacks() {
-                                cb.include_file(&filename)
-                            }
+                            ctx.include_file(filename);
                         }
                     }
                 }
@@ -1557,6 +1578,18 @@ impl ClangItemParser for Item {
 
             if let Some(param_id) = Item::type_param(None, location, ctx) {
                 return Ok(ctx.build_ty_wrapper(id, param_id, None, ty));
+            }
+        }
+
+        // Treat all types that are declared inside functions as opaque. The Rust binding
+        // won't be able to do anything with them anyway.
+        //
+        // (If we don't do this check here, we can have subtle logic bugs because we generally
+        // ignore function bodies. See issue #2036.)
+        if let Some(ref parent) = ty.declaration().fallible_semantic_parent() {
+            if FunctionKind::from_cursor(parent).is_some() {
+                debug!("Skipping type declared inside function: {:?}", ty);
+                return Ok(Item::new_opaque_type(id, ty, ctx));
             }
         }
 
@@ -1918,7 +1951,7 @@ impl ItemCanonicalPath for Item {
 /// not.
 ///
 /// Most of the callers probably want just yes, but the ones dealing with
-/// whitelisting and blacklisting don't.
+/// allowlisting and blocklisting don't.
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum UserMangled {
     No,

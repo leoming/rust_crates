@@ -28,7 +28,9 @@ pub enum FunctionKind {
 }
 
 impl FunctionKind {
-    fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
+    /// Given a clang cursor, return the kind of function it represents, or
+    /// `None` otherwise.
+    pub fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
         // FIXME(emilio): Deduplicate logic with `ir::comp`.
         Some(match cursor.kind() {
             clang_sys::CXCursor_FunctionDecl => FunctionKind::Function,
@@ -595,10 +597,13 @@ impl ClangSubItemParser for Function {
             return Err(ParseError::Continue);
         }
 
-        if !context.options().generate_inline_functions &&
-            cursor.is_inlined_function()
-        {
-            return Err(ParseError::Continue);
+        if cursor.is_inlined_function() {
+            if !context.options().generate_inline_functions {
+                return Err(ParseError::Continue);
+            }
+            if cursor.is_deleted_function() {
+                return Err(ParseError::Continue);
+            }
         }
 
         let linkage = cursor.linkage();

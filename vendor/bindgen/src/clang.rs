@@ -241,7 +241,7 @@ impl Cursor {
         self.x.kind
     }
 
-    /// Returns true is the cursor is a definition
+    /// Returns true if the cursor is a definition
     pub fn is_definition(&self) -> bool {
         unsafe { clang_isCursorDefinition(self.x) != 0 }
     }
@@ -467,6 +467,27 @@ impl Cursor {
     /// Is the referent an inlined function?
     pub fn is_inlined_function(&self) -> bool {
         unsafe { clang_Cursor_isFunctionInlined(self.x) != 0 }
+    }
+
+    /// Is the referent a defaulted function?
+    pub fn is_defaulted_function(&self) -> bool {
+        unsafe { clang_CXXMethod_isDefaulted(self.x) != 0 }
+    }
+
+    /// Is the referent a deleted function?
+    pub fn is_deleted_function(&self) -> bool {
+        // Unfortunately, libclang doesn't yet have an API for checking if a
+        // member function is deleted, but the following should be a good
+        // enough approximation.
+        // Deleted functions are implicitly inline according to paragraph 4 of
+        // [dcl.fct.def.delete] in the C++ standard. Normal inline functions
+        // have a definition in the same translation unit, so if this is an
+        // inline function without a definition, and it's not a defaulted
+        // function, we can reasonably safely conclude that it's a deleted
+        // function.
+        self.is_inlined_function() &&
+            self.definition().is_none() &&
+            !self.is_defaulted_function()
     }
 
     /// Get the width of this cursor's referent bit field, or `None` if the
