@@ -3,6 +3,7 @@
 name = "vendor_libs"
 version = "0.0.1"
 edition = "2018"
+license = "BSD-Google"
 
 [dependencies]
 async-trait = "0.1.42"

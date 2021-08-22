@@ -20,6 +20,25 @@ In order to update any package, follow these steps:
       checksums for packages that were modified.
     * It removes OWNER files from packages that have it (interferes with our own
       OWNERS management) and regenerates checksums
+    * It checks that all packages have a supported license and lists the set of
+      licenses used by the crates.
+    * If `--license-map=<filename>` is given, it will dump a json file which is
+      a dictionary with the crate names as keys and another dictionary with the
+      `license` and `license_file` as keys.
+* If any licenses are unsupported, do the following:
+    * Check if the package is actually included in the build. `cargo vendor`
+      seems to also pick up dependencies for unused configs (i.e. windows). You
+      will need to make sure these packages are stripped by `cargo vendor`.
+    * Check if the license file exists in the crate's repository. Sometimes the
+      crate authors just forget to list it in Cargo.toml. In this case, add
+      a new patch to apply the license to the crate and send a patch upstream to
+      include the license in the crate as well.
+    * Check if the license is permissive and ok with ChromeOS. If you don't know
+      how to do this, reach out to the OWNERS of this repo.
+      * Yes: Update the `vendor.py` script with the new license and also update
+        `net-wireless/floss-9999.ebuild` with the new license.
+      * No: Do not use this package. Contact the OWNERS of this repo for next
+        steps.
 
 ## Adding patches
 
