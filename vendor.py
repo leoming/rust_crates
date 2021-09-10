@@ -12,6 +12,7 @@ import os
 import pathlib
 import re
 import subprocess
+import toml
 
 # We only care about crates we're actually going to use and that's usually
 # limited to ones with cfg(linux). For running `cargo metadata`, limit results
@@ -172,9 +173,10 @@ def run_cargo_vendor(working_dir):
 
     Args:
         working_dir: Directory to run inside. This should be the directory where
-                    Cargo.toml is kept.
+                     Cargo.toml is kept.
     """
     subprocess.check_call(["cargo", "vendor"], cwd=working_dir)
+
 
 def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
     """Load metadata for manifest at given directory.
@@ -417,10 +419,78 @@ class LicenseManager:
               sorted([x for x in has_license_types]))
 
 
+# TODO(abps) - This needs to be replaced with datalog later. We should compile
+#              all crab files into datalog and query it with our requirements
+#              instead.
+class CrabManager:
+    """Manage audit files."""
+    def __init__(self, working_dir, crab_dir):
+        self.working_dir = working_dir
+        self.crab_dir = crab_dir
+
+    def _check_bad_traits(self, crabdata):
+        """Checks that a package's crab audit meets our requirements.
+
+        Args:
+            crabdata: Dict with crab keys in standard templated format.
+        """
+        common = crabdata['common']
+        # TODO(b/200578411) - Figure out what conditions we should enforce as
+        #                     part of the audit.
+        conditions = [
+            common.get('deny', None),
+        ]
+
+        # If any conditions are true, this crate is not acceptable.
+        return any(conditions)
+
+    def verify_traits(self):
+        """ Verify that all required CRAB traits for this repository are met.
+        """
+        metadata = load_metadata(self.working_dir)
+
+        failing_crates = {}
+
+        # Verify all packages have a CRAB file associated with it and they meet
+        # all our required traits
+        for package in metadata['packages']:
+            # Skip vendor_libs
+            if package['name'] == 'vendor_libs':
+                continue
+
+            crabname = "{}-{}".format(package['name'], package['version'])
+            filename = os.path.join(self.crab_dir, "{}.toml".format(crabname))
+
+            # If crab file doesn't exist, the crate fails
+            if not os.path.isfile(filename):
+                failing_crates[crabname] = "No crab file".format(filename)
+                continue
+
+            with open(filename, 'r') as f:
+                crabdata = toml.loads(f.read())
+
+            # If crab file's crate_name and version keys don't match this
+            # package, it also fails. This is just housekeeping...
+            if package['name'] != crabdata['crate_name'] or package[
+                    'version'] != crabdata['version']:
+                failing_crates[crabname] = "Crate name or version don't match"
+                continue
+
+            if self._check_bad_traits(crabdata):
+                failing_crates[crabname] = "Failed bad traits check"
+
+        # If we had any failing crates, list them now
+        if failing_crates:
+            print('Failed CRAB audit:')
+            for k, v in failing_crates.items():
+                print('  {}: {}'.format(k, v))
+
+
 def main(args):
     current_path = pathlib.Path(__file__).parent.absolute()
     patches = os.path.join(current_path, "patches")
     vendor = os.path.join(current_path, "vendor")
+    crab_dir = os.path.join(current_path, "crab", "crates")
 
     # First, actually run cargo vendor
     run_cargo_vendor(current_path)
@@ -435,6 +505,10 @@ def main(args):
     # Combine license file and check for any bad licenses
     lm = LicenseManager(current_path, vendor)
     lm.generate_license(args.skip_license_check, args.license_map)
+
+    # Run crab audit on all packages
+    crab = CrabManager(current_path, crab_dir)
+    crab.verify_traits()
 
 
 if __name__ == '__main__':
