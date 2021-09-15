@@ -1,0 +1,5 @@
+crate_name = "backtrace"
+version = "0.3.56"
+reviewed-by-team = "ChromeOS Legacy"
+
+[common]

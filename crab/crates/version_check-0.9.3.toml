@@ -1,0 +1,5 @@
+crate_name = "version_check"
+version = "0.9.3"
+reviewed-by-team = "ChromeOS Legacy"
+
+[common]

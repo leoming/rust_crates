@@ -1,0 +1,5 @@
+crate_name = "dirs-sys-next"
+version = "0.1.2"
+reviewed-by-team = "ChromeOS Legacy"
+
+[common]

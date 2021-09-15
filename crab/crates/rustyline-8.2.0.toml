@@ -1,0 +1,5 @@
+crate_name = "rustyline"
+version = "8.2.0"
+reviewed-by-team = "ChromeOS Legacy"
+
+[common]
