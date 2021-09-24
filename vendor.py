@@ -11,6 +11,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import toml
 
@@ -187,9 +188,15 @@ def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
     """
     manifest_path = os.path.join(working_dir, 'Cargo.toml')
     cmd = [
-        'cargo', 'metadata', '--format-version', '1', "--filter-platform",
-        filter_platform, '--manifest-path', manifest_path
+        'cargo', 'metadata', '--format-version', '1', '--manifest-path',
+        manifest_path
     ]
+
+    # Conditionally add platform filter
+    if filter_platform:
+        cmd.append("--filter-platform")
+        cmd.append(filter_platform)
+
     output = subprocess.check_output(cmd, cwd=working_dir)
 
     return json.loads(output)
@@ -486,6 +493,79 @@ class CrabManager:
                 print('  {}: {}'.format(k, v))
 
 
+class CrateDestroyer():
+    LIB_RS_BODY = """compile_error!("This crate cannot be built for this configuration.");\n"""
+
+    def __init__(self, working_dir, vendor_dir):
+        self.working_dir = working_dir
+        self.vendor_dir = vendor_dir
+
+    def _modify_cargo_toml(self, pkg_path):
+        with open(os.path.join(pkg_path, "Cargo.toml"), "r") as cargo:
+            contents = toml.load(cargo)
+
+        # Change description, license and delete license key
+        contents["package"]["description"] = "Empty crate that should not build."
+        contents["package"]["license"] = "Apache-2.0"
+        if contents["package"].get("license_file"):
+            del contents["package"]["license_file"]
+
+        with open(os.path.join(pkg_path, "Cargo.toml"), "w") as cargo:
+            toml.dump(contents, cargo)
+
+    def _replace_source_contents(self, package_path):
+        # First load the checksum file before starting
+        checksum_file = os.path.join(package_path, ".cargo-checksum.json")
+        with open(checksum_file, 'r') as csum:
+            checksum_contents = json.load(csum)
+
+        # Also load the cargo.toml file which we need to write back
+        cargo_file = os.path.join(package_path, "Cargo.toml")
+        with open(cargo_file, 'r') as cfile:
+            cargo_contents = toml.load(cfile)
+
+        shutil.rmtree(package_path)
+
+        # Make package and src dirs and replace lib.rs
+        os.makedirs(os.path.join(package_path, "src"), exist_ok=True)
+        with open(os.path.join(package_path, "src", "lib.rs"), "w") as librs:
+            librs.write(self.LIB_RS_BODY)
+
+        # Restore cargo.toml
+        with open(cargo_file, 'w') as cfile:
+            toml.dump(cargo_contents, cfile)
+
+        # Restore checksum
+        with open(checksum_file, 'w') as csum:
+            json.dump(checksum_contents, csum)
+
+    def destroy_unused_crates(self):
+        all_packages = load_metadata(self.working_dir, filter_platform=None)
+        used_packages = set([p["name"] for p in load_metadata(self.working_dir)["packages"]])
+
+        cleaned_packages = []
+        for package in all_packages["packages"]:
+
+            # Skip used packages
+            if package["name"] in used_packages:
+                continue
+
+            # Detect the correct package path to destroy
+            pkg_path = os.path.join(self.vendor_dir, "{}-{}".format(package["name"], package["version"]))
+            if not os.path.isdir(pkg_path):
+                pkg_path = os.path.join(self.vendor_dir, package["name"])
+                if not os.path.isdir(pkg_path):
+                    print("Crate {} not found at {}".format(package["name"], pkg_path))
+                    continue
+
+            self._replace_source_contents(pkg_path)
+            self._modify_cargo_toml(pkg_path)
+            _rerun_checksums(pkg_path)
+            cleaned_packages.append(package["name"])
+
+        for pkg in cleaned_packages:
+            print("Removed unused crate ", pkg)
+
 def main(args):
     current_path = pathlib.Path(__file__).parent.absolute()
     patches = os.path.join(current_path, "patches")
@@ -499,8 +579,11 @@ def main(args):
     # - Apply patches (also re-calculates checksums)
     # - Cleanup any owners files (otherwise, git check-in or checksums are
     #   unhappy)
+    # - Destroy unused crates
     apply_patches(patches, vendor)
     cleanup_owners(vendor)
+    destroyer = CrateDestroyer(current_path, vendor)
+    destroyer.destroy_unused_crates()
 
     # Combine license file and check for any bad licenses
     lm = LicenseManager(current_path, vendor)
