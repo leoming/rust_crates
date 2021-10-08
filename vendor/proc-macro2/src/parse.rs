@@ -59,7 +59,7 @@ impl<'a> Cursor<'a> {
     }
 }
 
-struct Reject;
+pub(crate) struct Reject;
 type PResult<'a, O> = Result<(Cursor<'a>, O), Reject>;
 
 fn skip_whitespace(input: Cursor) -> Cursor {
@@ -310,7 +310,7 @@ fn ident_not_raw(input: Cursor) -> PResult<&str> {
     Ok((input.advance(end), &input.rest[..end]))
 }
 
-fn literal(input: Cursor) -> PResult<Literal> {
+pub(crate) fn literal(input: Cursor) -> PResult<Literal> {
     let rest = literal_nocapture(input)?;
     let end = input.len() - rest.len();
     Ok((rest, Literal::_new(input.rest[..end].to_string())))
@@ -461,7 +461,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
 fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.char_indices();
     let mut n = 0;
-    while let Some((i, ch)) = chars.next() {
+    for (i, ch) in &mut chars {
         match ch {
             '"' => {
                 n = i;
