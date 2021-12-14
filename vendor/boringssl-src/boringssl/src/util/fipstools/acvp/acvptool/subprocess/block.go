@@ -60,24 +60,20 @@ func iterateAES(transact func(n int, args ...[]byte) ([][]byte, error), encrypt 
 			iteration.CiphertextHex = hex.EncodeToString(input)
 		}
 
-		var result, prevResult []byte
-		for j := 0; j < 1000; j++ {
-			prevResult = input
-			result, err := transact(1, key, input)
-			if err != nil {
-				panic("block operation failed")
-			}
-			input = result[0]
+		results, err := transact(2, key, input, uint32le(1000))
+		if err != nil {
+			panic(err)
 		}
-		result = input
+		input = results[0]
+		prevResult := results[1]
 
 		if encrypt {
-			iteration.CiphertextHex = hex.EncodeToString(result)
+			iteration.CiphertextHex = hex.EncodeToString(input)
 		} else {
-			iteration.PlaintextHex = hex.EncodeToString(result)
+			iteration.PlaintextHex = hex.EncodeToString(input)
 		}
 
-		aesKeyShuffle(key, result, prevResult)
+		aesKeyShuffle(key, input, prevResult)
 		mctResults = append(mctResults, iteration)
 	}
 
@@ -96,33 +92,15 @@ func iterateAESCBC(transact func(n int, args ...[]byte) ([][]byte, error), encry
 			iteration.CiphertextHex = hex.EncodeToString(input)
 		}
 
-		var result, prevResult []byte
 		iteration.IVHex = hex.EncodeToString(iv)
 
-		var prevInput []byte
-		for j := 0; j < 1000; j++ {
-			prevResult = result
-			if j > 0 {
-				if encrypt {
-					iv = result
-				} else {
-					iv = prevInput
-				}
-			}
-
-			results, err := transact(1, key, input, iv)
-			if err != nil {
-				panic("block operation failed")
-			}
-			result = results[0]
-
-			prevInput = input
-			if j == 0 {
-				input = iv
-			} else {
-				input = prevResult
-			}
+		results, err := transact(2, key, input, iv, uint32le(1000))
+		if err != nil {
+			panic("block operation failed")
 		}
+
+		result := results[0]
+		prevResult := results[1]
 
 		if encrypt {
 			iteration.CiphertextHex = hex.EncodeToString(result)
@@ -178,17 +156,13 @@ func iterate3DES(transact func(n int, args ...[]byte) ([][]byte, error), encrypt
 			iteration.CiphertextHex = hex.EncodeToString(input)
 		}
 
-		var result, prevResult, prevPrevResult []byte
-		for j := 0; j < 10000; j++ {
-			prevPrevResult = prevResult
-			prevResult = input
-			result, err := transact(1, key, input)
-			if err != nil {
-				panic("block operation failed")
-			}
-			input = result[0]
+		results, err := transact(3, key, input, uint32le(10000))
+		if err != nil {
+			panic("block operation failed")
 		}
-		result = input
+		result := results[0]
+		prevResult := results[1]
+		prevPrevResult := results[2]
 
 		if encrypt {
 			iteration.CiphertextHex = hex.EncodeToString(result)
@@ -198,6 +172,7 @@ func iterate3DES(transact func(n int, args ...[]byte) ([][]byte, error), encrypt
 
 		keyShuffle3DES(key, result, prevResult, prevPrevResult)
 		mctResults = append(mctResults, iteration)
+		input = result
 	}
 
 	return mctResults
@@ -220,28 +195,14 @@ func iterate3DESCBC(transact func(n int, args ...[]byte) ([][]byte, error), encr
 		}
 		iteration.IVHex = hex.EncodeToString(iv)
 
-		var result, prevResult, prevPrevResult []byte
-		for j := 0; j < 10000; j++ {
-			prevPrevResult = prevResult
-			prevResult = result
-			results, err := transact(1, key, input, iv)
-			if err != nil {
-				panic("block operation failed")
-			}
-			result = results[0]
-
-			if encrypt {
-				if j == 0 {
-					input = iv
-				} else {
-					input = prevResult
-				}
-				iv = result
-			} else {
-				iv = input
-				input = result
-			}
+		results, err := transact(3, key, input, iv, uint32le(10000))
+		if err != nil {
+			panic("block operation failed")
 		}
+
+		result := results[0]
+		prevResult := results[1]
+		prevPrevResult := results[2]
 
 		if encrypt {
 			iteration.CiphertextHex = hex.EncodeToString(result)
@@ -254,6 +215,9 @@ func iterate3DESCBC(transact func(n int, args ...[]byte) ([][]byte, error), encr
 		if encrypt {
 			input = prevResult
 			iv = result
+		} else {
+			iv = prevResult
+			input = result
 		}
 
 		mctResults = append(mctResults, iteration)
@@ -265,8 +229,12 @@ func iterate3DESCBC(transact func(n int, args ...[]byte) ([][]byte, error), encr
 // blockCipher implements an ACVP algorithm by making requests to the subprocess
 // to encrypt and decrypt with a block cipher.
 type blockCipher struct {
-	algo                    string
-	blockSize               int
+	algo      string
+	blockSize int
+	// numResults is the number of values returned by the wrapper. The one-shot
+	// tests always take the first value as the result, but the mctFunc may use
+	// them all.
+	numResults              int
 	inputsAreBlockMultiples bool
 	hasIV                   bool
 	mctFunc                 func(transact func(n int, args ...[]byte) ([][]byte, error), encrypt bool, key, input, iv []byte) (result []blockCipherMCTResult)
@@ -282,11 +250,12 @@ type blockCipherTestGroup struct {
 	Direction string `json:"direction"`
 	KeyBits   int    `json:"keylen"`
 	Tests     []struct {
-		ID            uint64 `json:"tcId"`
-		PlaintextHex  string `json:"pt"`
-		CiphertextHex string `json:"ct"`
-		IVHex         string `json:"iv"`
-		KeyHex        string `json:"key"`
+		ID            uint64  `json:"tcId"`
+		InputBits     *uint64 `json:"payloadLen"`
+		PlaintextHex  string  `json:"pt"`
+		CiphertextHex string  `json:"ct"`
+		IVHex         string  `json:"iv"`
+		KeyHex        string  `json:"key"`
 
 		// 3DES tests serialise the key differently.
 		Key1Hex string `json:"key1"`
@@ -314,9 +283,9 @@ type blockCipherMCTResult struct {
 	IVHex         string `json:"iv,omitempty"`
 
 	// 3DES tests serialise the key differently.
-	Key1Hex string `json:"key1"`
-	Key2Hex string `json:"key2"`
-	Key3Hex string `json:"key3"`
+	Key1Hex string `json:"key1,omitempty"`
+	Key2Hex string `json:"key2,omitempty"`
+	Key3Hex string `json:"key3,omitempty"`
 }
 
 func (b *blockCipher) Process(vectorSet []byte, m Transactable) (interface{}, error) {
@@ -398,6 +367,15 @@ func (b *blockCipher) Process(vectorSet []byte, m Transactable) (interface{}, er
 				inputHex = test.CiphertextHex
 			}
 
+			if test.InputBits != nil {
+				if *test.InputBits%8 != 0 {
+					return nil, fmt.Errorf("input to test case %d/%d is not a whole number of bytes", group.ID, test.ID)
+				}
+				if inputBits := 4 * uint64(len(inputHex)); *test.InputBits != inputBits {
+					return nil, fmt.Errorf("input to test case %d/%d is %q (%d bits), but %d bits is specified", group.ID, test.ID, inputHex, inputBits, *test.InputBits)
+				}
+			}
+
 			input, err := hex.DecodeString(inputHex)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode hex in test case %d/%d: %s", group.ID, test.ID, err)
@@ -423,9 +401,9 @@ func (b *blockCipher) Process(vectorSet []byte, m Transactable) (interface{}, er
 				var err error
 
 				if b.hasIV {
-					result, err = m.Transact(op, 1, key, input, iv)
+					result, err = m.Transact(op, b.numResults, key, input, iv, uint32le(1))
 				} else {
-					result, err = m.Transact(op, 1, key, input)
+					result, err = m.Transact(op, b.numResults, key, input, uint32le(1))
 				}
 				if err != nil {
 					panic("block operation failed: " + err.Error())
