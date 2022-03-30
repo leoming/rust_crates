@@ -17,10 +17,10 @@ use crate::{Error, Message};
 use crate::channel::{MatchingReceiver, Channel, Sender, Token};
 use crate::strings::{BusName, Path, Interface, Member};
 use crate::arg::{AppendAll, ReadAll, IterAppend};
-use crate::message::MatchRule;
+use crate::message::{MatchRule, MessageType};
 
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::{task, pin, mem};
 use std::cell::RefCell;
 use std::time::Duration;
@@ -75,6 +75,7 @@ pub struct LocalConnection {
     replies: RefCell<Replies<LocalRepliesCb>>,
     timeout_maker: Option<TimeoutMakerCb>,
     waker: Option<WakerCb>,
+    all_signal_matches: AtomicBool,
 }
 
 /// A connection to D-Bus, async version, which is Send but not Sync.
@@ -84,6 +85,7 @@ pub struct Connection {
     replies: RefCell<Replies<RepliesCb>>,
     timeout_maker: Option<TimeoutMakerCb>,
     waker: Option<WakerCb>,
+    all_signal_matches: AtomicBool,
 }
 
 /// A connection to D-Bus, Send + Sync + async version
@@ -93,6 +95,7 @@ pub struct SyncConnection {
     replies: Mutex<Replies<SyncRepliesCb>>,
     timeout_maker: Option<TimeoutMakerCb>,
     waker: Option<WakerCb>,
+    all_signal_matches: AtomicBool,
 }
 
 use stdintf::org_freedesktop_dbus::DBus;
@@ -113,6 +116,7 @@ impl From<Channel> for $c {
             filters: Default::default(),
             timeout_maker: None,
             waker: None,
+            all_signal_matches: AtomicBool::new(false),
         }
     }
 }
@@ -122,7 +126,17 @@ impl AsRef<Channel> for $c {
 }
 
 impl Sender for $c {
-    fn send(&self, msg: Message) -> Result<u32, ()> { self.channel.send(msg) }
+    fn send(&self, msg: Message) -> Result<u32, ()> {
+        let token = self.channel.send(msg);
+        if self.channel.has_messages_to_send() {
+            // Non-blocking send failed
+            // Wake up task that will send the message
+            if self.waker.as_ref().map(|wake| wake().is_err() ).unwrap_or(false) {
+                return Err(());
+            }
+        }
+        token
+    }
 }
 
 impl MatchingReceiver for $c {
@@ -178,13 +192,33 @@ impl Process for $c {
                 return;
             }
         }
-        let ff = self.filters_mut().remove_matching(&msg);
-        if let Some(mut ff) = ff {
-            if ff.2(msg, self) {
-                self.filters_mut().insert(ff);
+        if self.all_signal_matches.load(Ordering::Acquire) && msg.msg_type() == MessageType::Signal {
+            // If it's a signal and the mode is enabled, send a copy of the message to all
+            // matching filters.
+            let matching_filters = self.filters_mut().remove_all_matching(&msg);
+            // `matching_filters` needs to be a separate variable and not inlined here, because if
+            // it's inline then the `MutexGuard` will live too long and we'll get a deadlock on the
+            // next call to `filters_mut()` below.
+            for mut ff in matching_filters {
+                if let Ok(copy) = msg.duplicate() {
+                    if ff.2(copy, self) {
+                        self.filters_mut().insert(ff);
+                    }
+                } else {
+                    // Silently drop the message, but add the filter back.
+                    self.filters_mut().insert(ff);
+                }
             }
-        } else if let Some(reply) = crate::channel::default_reply(&msg) {
-            let _ = self.send(reply);
+        } else {
+            // Otherwise, send the original message to only the first matching filter.
+            let ff = self.filters_mut().remove_first_matching(&msg);
+            if let Some(mut ff) = ff {
+                if ff.2(msg, self) {
+                    self.filters_mut().insert(ff);
+                }
+            } else if let Some(reply) = crate::channel::default_reply(&msg) {
+                let _ = self.channel.send(reply);
+            }
         }
     }
 }
@@ -228,6 +262,10 @@ impl $c {
 
     /// Adds a new match to the connection, and sets up a callback when this message arrives.
     ///
+    /// If multiple [`MatchRule`]s match the same message, then by default only the first will get
+    /// the callback. This behaviour can be changed for signal messages by calling
+    /// [`set_signal_match_mode`](Self::set_signal_match_mode).
+    ///
     /// The returned value can be used to remove the match.
     pub async fn add_match(&self, match_rule: MatchRule<'static>) -> Result<MsgMatch, Error> {
         let m = match_rule.match_str();
@@ -240,7 +278,7 @@ impl $c {
         let token = self.start_receive(match_rule, Box::new(move |msg, _| {
             mi_weak.upgrade().map(|mi| mi.incoming(msg)).unwrap_or(false)
         }));
-        mi.token.store(token.0, SeqCst);
+        mi.token.store(token.0, Ordering::SeqCst);
         Ok(MsgMatch(mi))
     }
 
@@ -259,6 +297,21 @@ impl $c {
     pub async fn remove_match(&self, id: Token) -> Result<(), Error> {
         let (mr, _) = self.stop_receive(id).ok_or_else(|| Error::new_failed("No match with that id found"))?;
         self.remove_match_no_cb(&mr.match_str()).await
+    }
+
+    /// If true, configures the connection to send signal messages to all matching [`MatchRule`]
+    /// filters added with [`add_match`](Self::add_match) rather than just the first one. This comes
+    /// with the following gotchas:
+    ///
+    ///  * The messages might be duplicated, so the message serial might be lost (this is
+    ///    generally not a problem for signals).
+    ///  * Panicking inside a match callback might mess with other callbacks, causing them
+    ///    to be permanently dropped.
+    ///  * Removing other matches from inside a match callback is not supported.
+    ///
+    /// This is false by default, for a newly-created connection.
+    pub fn set_signal_match_mode(&self, match_all: bool) {
+        self.all_signal_matches.store(match_all, Ordering::Release);
     }
 }
 
@@ -414,7 +467,7 @@ impl MsgMatch {
     }
 
     /// The token retreived can be used in a call to remove_match to stop matching on the data.
-    pub fn token(&self) -> Token { Token(self.0.token.load(SeqCst)) }
+    pub fn token(&self) -> Token { Token(self.0.token.load(Ordering::SeqCst)) }
 }
 
 /// A struct that wraps a connection, destination and path.
