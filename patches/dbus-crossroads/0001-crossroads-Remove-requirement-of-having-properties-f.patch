@@ -1,0 +1,42 @@
+From cb5055b30018042070fe02231b3233c4404c7ea7 Mon Sep 17 00:00:00 2001
+From: Sonny Sasaka <sonnysasaka@chromium.org>
+Date: Wed, 30 Mar 2022 13:41:53 -0700
+Subject: [PATCH] crossroads: Remove requirement of having properties for
+ object manager
+
+The D-Bus specification does not require properties to exist for an
+object path to be advertised in ObjectManager
+(https://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-objectmanager).
+---
+ src/stdimpl.rs | 1 -
+ src/test.rs    | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/stdimpl.rs b/src/stdimpl.rs
+index a206948..4634cee 100644
+--- a/src/stdimpl.rs
++++ b/src/stdimpl.rs
+@@ -277,7 +277,6 @@ fn get_all_for_path<F: FnOnce(&mut IfaceContext) + Send + 'static>(path: &dbus::
+     let ictx: Arc<Mutex<IfaceContext>> = Default::default();
+     let (reg, ifaces) = cr.registry_and_ifaces(&path);
+     let all: Vec<_> = ifaces.into_iter().filter_map(|&token| {
+-        if !reg.has_props(token) { return None };
+         let iface_name = reg.get_intf_name(token)?;
+         Some(PropContext {
+             context: None,
+diff --git a/src/test.rs b/src/test.rs
+index 501df8f..c280f91 100644
+--- a/src/test.rs
++++ b/src/test.rs
+@@ -205,7 +205,7 @@ fn object_manager() {
+     let radius_iface = &omia.interfaces["com.example.dbusrs.radius"]["Radius"];
+     let radius = radius_iface.0.as_u64().unwrap();
+     assert_eq!(radius, 10);
+-    assert!(omia.interfaces.get("org.freedesktop.DBus.Introspectable").is_none());
++    assert!(omia.interfaces.get("org.freedesktop.DBus.Introspectable").is_some());
+ 
+     let msg = Message::new_method_call("com.example.dbusrs.crossroads.score", "/list",
+         "org.freedesktop.DBus.ObjectManager", "GetManagedObjects").unwrap();
+-- 
+2.35.1.1094.g7c7d902a7c-goog
+
