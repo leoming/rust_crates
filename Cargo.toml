@@ -7,14 +7,17 @@ license = "BSD-Google"
 
 [dependencies]
 async-trait = "0.1.42"
+base64 = "0.13.0"
 bindgen = "0.59"
 bytes = "1.0"
+configparser = "3.0.0"
 cxx = { version = "1.0.42", features = ["c++17"] }
 dbus = "0.9.5"
 dbus-crossroads = "0.4.0"
 dbus-tokio = "0.7.3"
 env_logger = "0.8"
 futures = "0.3.13"
+glob = "0.3.0"
 grpcio = { version = "0.9", features = ["protobuf", "protobuf-codec", "openssl"] }
 grpcio-sys = { version = "0.9", features = ["openssl"] }
 inotify = "0.9"

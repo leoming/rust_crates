@@ -50,5 +50,4 @@ applied when you run `vendor.py`.
 ## Testing updates
 
 Updates to this repo will be captured by CQ (currently zork-floss-cq). To
-directly test changes, build the `net-wireless/floss` package (it is only
-available on the zork-floss board right now).
+directly test changes, build the `net-wireless/floss` package.

@@ -78,6 +78,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "base64"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
+
+[[package]]
 name = "bindgen"
 version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -227,6 +233,12 @@ checksum = "eb6210b637171dfba4cda12e579ac6dc73f5165ad56133e5d72ef3131f320855"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "configparser"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06821ea598337a8412cf47c5b71c3bc694a7f0aed188ac28b836fab164a2c202"
 
 [[package]]
 name = "cxx"
@@ -1364,14 +1376,17 @@ name = "vendor_libs"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "base64",
  "bindgen 0.59.1",
  "bytes",
+ "configparser",
  "cxx",
  "dbus",
  "dbus-crossroads",
  "dbus-tokio",
  "env_logger",
  "futures",
+ "glob",
  "grpcio",
  "grpcio-sys",
  "inotify",
