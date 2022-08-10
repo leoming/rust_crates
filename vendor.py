@@ -521,8 +521,8 @@ class CrateDestroyer():
 
         # Also load the cargo.toml file which we need to write back
         cargo_file = os.path.join(package_path, "Cargo.toml")
-        with open(cargo_file, 'r') as cfile:
-            cargo_contents = toml.load(cfile)
+        with open(cargo_file, 'rb') as cfile:
+            cargo_contents = cfile.read()
 
         shutil.rmtree(package_path)
 
@@ -532,8 +532,8 @@ class CrateDestroyer():
             librs.write(self.LIB_RS_BODY)
 
         # Restore cargo.toml
-        with open(cargo_file, 'w') as cfile:
-            toml.dump(cargo_contents, cfile)
+        with open(cargo_file, 'wb') as cfile:
+            cfile.write(cargo_contents)
 
         # Restore checksum
         with open(checksum_file, 'w') as csum:
