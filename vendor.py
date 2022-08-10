@@ -14,6 +14,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import textwrap
 import toml
 
 # We only care about crates we're actually going to use and that's usually
@@ -324,7 +325,8 @@ class LicenseManager:
 
         return ''
 
-    def generate_license(self, skip_license_check, print_map_to_file):
+    def generate_license(self, skip_license_check, print_map_to_file,
+                         license_shorthand_file):
         """Generate single massive license file from metadata."""
         metadata = load_metadata(self.working_dir)
 
@@ -460,8 +462,17 @@ class LicenseManager:
                 "Unhandled missing license file. "
                 "Make sure all are accounted for before continuing.")
 
-        print("Add the following licenses to the ebuild: \n",
-              sorted([x for x in has_license_types]))
+        sorted_licenses = sorted(has_license_types)
+        print("Add the following licenses to the ebuild:\n",
+              sorted_licenses)
+        header = textwrap.dedent("""\
+            # File to describe the licenses used by this registry.
+            # Used to it's easy to automatically verify ebuilds are updated.
+            # Each line is a license. Lines starting with # are comments.
+            """)
+        with open(license_shorthand_file, 'w', encoding='utf-8') as f:
+            f.write(header)
+            f.write('\n'.join(sorted_licenses))
 
 
 # TODO(abps) - This needs to be replaced with datalog later. We should compile
@@ -607,6 +618,7 @@ def main(args):
     patches = os.path.join(current_path, "patches")
     vendor = os.path.join(current_path, "vendor")
     crab_dir = os.path.join(current_path, "crab", "crates")
+    license_shorthand_file = os.path.join(current_path, "licenses_used.txt")
 
     # First, actually run cargo vendor
     run_cargo_vendor(current_path)
@@ -623,7 +635,8 @@ def main(args):
 
     # Combine license file and check for any bad licenses
     lm = LicenseManager(current_path, vendor)
-    lm.generate_license(args.skip_license_check, args.license_map)
+    lm.generate_license(args.skip_license_check, args.license_map,
+                        license_shorthand_file)
 
     # Run crab audit on all packages
     crab = CrabManager(current_path, crab_dir)
