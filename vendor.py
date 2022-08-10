@@ -6,6 +6,7 @@
 """ This script cleans up the vendor directory.
 """
 import argparse
+import collections
 import hashlib
 import json
 import os
@@ -120,9 +121,21 @@ def apply_single_patch(patch, workdir):
     Returns:
         True if successful. False otherwise.
     """
-    print("-- Applying {}".format(patch))
+    print(f"-- Applying {patch} to {workdir}")
     proc = subprocess.run(["patch", "-p1", "-i", patch], cwd=workdir)
     return proc.returncode == 0
+
+
+def determine_vendor_crates(vendor_path):
+    """Returns a map of {crate_name: [directory]} at the given vendor_path."""
+    result = collections.defaultdict(list)
+    for crate_name_plus_ver in os.listdir(vendor_path):
+      name, _ = crate_name_plus_ver.rsplit('-', 1)
+      result[name].append(crate_name_plus_ver)
+
+    for crate_list in result.values():
+      crate_list.sort()
+    return result
 
 
 def apply_patches(patches_path, vendor_path):
@@ -139,6 +152,7 @@ def apply_patches(patches_path, vendor_path):
     if not pathlib.Path(patches_path).is_dir():
         return
 
+    vendor_crate_map = determine_vendor_crates(vendor_path)
     # Look for all patches and apply them
     for d in os.listdir(patches_path):
         dir_path = os.path.join(patches_path, d)
@@ -147,22 +161,35 @@ def apply_patches(patches_path, vendor_path):
         if not os.path.isdir(dir_path):
             continue
 
-        for patch in os.listdir(os.path.join(dir_path)):
+        for patch in os.listdir(dir_path):
             file_path = os.path.join(dir_path, patch)
 
             # Skip if not a patch file
             if not os.path.isfile(file_path) or not patch.endswith(".patch"):
                 continue
 
-            # If there are any patches, queue checksums for that folder.
-            checksums_for[d] = True
+            # We accept one of two forms here:
+            # - direct targets (these name # `${crate_name}-${version}`)
+            # - simply the crate name (which applies to all versions of the
+            #   crate)
+            direct_target = os.path.join(vendor_path, d)
+            if os.path.isdir(direct_target):
+                # If there are any patches, queue checksums for that folder.
+                checksums_for[d] = True
 
-            # Apply the patch. Exit from patch loop if patching failed.
-            success = apply_single_patch(file_path,
-                                         os.path.join(vendor_path, d))
-            if not success:
-                print("Failed to apply patch: {}".format(patch))
-                break
+                # Apply the patch. Exit from patch loop if patching failed.
+                if not apply_single_patch(file_path, direct_target):
+                    print("Failed to apply patch: {}".format(patch))
+                    break
+            elif d in vendor_crate_map:
+                for crate in vendor_crate_map[d]:
+                  checksums_for[crate] = True
+                  target = os.path.join(vendor_path, crate)
+                  if not apply_single_patch(file_path, target):
+                      print(f'Failed to apply patch {patch} to {target}')
+                      break
+            else:
+                raise RuntimeError(f'Unknown crate in {vendor_path}: {d}')
 
     # Re-run checksums for all modified packages since we applied patches.
     for key in checksums_for.keys():
@@ -176,7 +203,17 @@ def run_cargo_vendor(working_dir):
         working_dir: Directory to run inside. This should be the directory where
                      Cargo.toml is kept.
     """
-    subprocess.check_call(["cargo", "vendor"], cwd=working_dir)
+    # Cargo will refuse to revendor into versioned directories, which leads to
+    # repeated `./vendor.py` invocations trying to apply patches to
+    # already-patched sources. Remove the existing vendor directory to avoid
+    # this.
+    vendor_dir = working_dir / 'vendor'
+    if vendor_dir.exists():
+      shutil.rmtree(vendor_dir)
+    subprocess.check_call(
+        ['cargo', 'vendor', '--versioned-dirs', '-v'],
+        cwd=working_dir,
+    )
 
 
 def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
@@ -333,9 +370,10 @@ class LicenseManager:
 
             # We ignore the metadata for license file because most crates don't
             # have it set. Just scan the source for licenses.
+            pkg_version = package['version']
             license_files = [
                 x for x in self._find_license_in_dir(
-                    os.path.join(self.vendor_dir, pkg_name))
+                    os.path.join(self.vendor_dir, f'{pkg_name}-{pkg_version}'))
             ]
 
             # If there are multiple licenses, they are delimited with "OR" or "/"
@@ -553,10 +591,8 @@ class CrateDestroyer():
             # Detect the correct package path to destroy
             pkg_path = os.path.join(self.vendor_dir, "{}-{}".format(package["name"], package["version"]))
             if not os.path.isdir(pkg_path):
-                pkg_path = os.path.join(self.vendor_dir, package["name"])
-                if not os.path.isdir(pkg_path):
-                    print("Crate {} not found at {}".format(package["name"], pkg_path))
-                    continue
+                print(f'Crate {package["name"]} not found at {pkg_path}')
+                continue
 
             self._replace_source_contents(pkg_path)
             self._modify_cargo_toml(pkg_path)
@@ -564,7 +600,7 @@ class CrateDestroyer():
             cleaned_packages.append(package["name"])
 
         for pkg in cleaned_packages:
-            print("Removed unused crate ", pkg)
+            print("Removed unused crate", pkg)
 
 def main(args):
     current_path = pathlib.Path(__file__).parent.absolute()
