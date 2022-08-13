@@ -368,7 +368,9 @@ class LicenseManager:
                 continue
 
             license_files = []
-            license = package.get('license', '')
+            # use `or ''` instead of get's default, since `package` may have a
+            # None value for 'license'.
+            license = package.get('license') or ''
 
             # We ignore the metadata for license file because most crates don't
             # have it set. Just scan the source for licenses.
