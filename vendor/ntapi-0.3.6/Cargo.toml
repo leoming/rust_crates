@@ -15,7 +15,7 @@ repository = "https://github.com/MSxDOS/ntapi"
 [features]
 default = [ "user",]
 func-types = []
-impl-default = [ "winapi/impl-default",]
+impl-default = []
 kernel = []
 nightly = []
 user = []

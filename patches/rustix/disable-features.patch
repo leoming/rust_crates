@@ -1,0 +1,18 @@
+Feature detection isn't entirely working here. It does not respect Rust's
+`allowed-features` flag. It should probably use something like
+`version_check::supports_feature` instead:
+https://github.com/tkaitchuck/aHash/issues/117
+
+diff --git a/build.rs b/build.rs
+index de55ffe..c4d0633 100644
+--- a/build.rs
++++ b/build.rs
+@@ -152,7 +152,7 @@ fn link_in_librustix_outline(arch: &str, asm_name: &str) {
+ }
+ 
+ fn use_feature_or_nothing(feature: &str) {
+-    if has_feature(feature) {
++    if false && has_feature(feature) {
+         use_feature(feature);
+     }
+ }

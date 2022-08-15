@@ -13,18 +13,7 @@ license = "Apache-2.0"
 repository = "https://github.com/DoumanAsh/clipboard-win"
 
 [features]
-std = [ "error-code/std",]
+std = []
 
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
-
-[target."cfg(windows)".dependencies.error-code]
-version = "2.1"
-
-[target."cfg(windows)".dependencies.str-buf]
-version = "1"
-
-[target."cfg(windows)".dependencies.winapi]
-version = "0.3"
-features = [ "basetsd", "shellapi", "winbase", "winuser", "winerror", "stringapiset", "errhandlingapi", "synchapi",]
-default-features = false

@@ -1,0 +1,13 @@
+[package]
+name = "errno"
+version = "0.2.8"
+authors = [ "Chris Wong <lambda.fairy@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/errno"
+categories = [ "os",]
+license = "Apache-2.0"
+repository = "https://github.com/lambda-fairy/rust-errno"
+
+[features]
+default = [ "std",]
+std = []

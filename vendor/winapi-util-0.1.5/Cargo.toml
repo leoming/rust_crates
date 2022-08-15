@@ -14,7 +14,3 @@ repository = "https://github.com/BurntSushi/winapi-util"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-pc-windows-msvc",]
-
-[target."cfg(windows)".dependencies.winapi]
-version = "0.3"
-features = [ "std", "consoleapi", "errhandlingapi", "fileapi", "minwindef", "processenv", "winbase", "wincon", "winerror", "winnt",]

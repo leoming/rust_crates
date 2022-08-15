@@ -14,7 +14,7 @@ repository = "https://github.com/hermitcore/libhermit-rs"
 [features]
 default = []
 docs = []
-rustc-dep-of-std = [ "core", "compiler_builtins/rustc-dep-of-std", "libc/rustc-dep-of-std",]
+rustc-dep-of-std = []
 
 [dependencies.compiler_builtins]
 version = "0.1.0"

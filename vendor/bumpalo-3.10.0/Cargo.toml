@@ -1,0 +1,45 @@
+[[test]]
+name = "try_alloc"
+path = "tests/try_alloc.rs"
+harness = false
+
+[[bench]]
+name = "benches"
+path = "benches/benches.rs"
+harness = false
+required-features = [ "collections",]
+
+[package]
+edition = "2018"
+name = "bumpalo"
+version = "3.10.0"
+authors = [ "Nick Fitzgerald <fitzgen@gmail.com>",]
+exclude = [ "/.github/*", "/benches", "/tests", "valgrind.supp", "bumpalo.png",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/bumpalo"
+readme = "README.md"
+categories = [ "memory-management", "rust-patterns", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/fitzgen/bumpalo"
+
+[lib]
+path = "src/lib.rs"
+bench = false
+
+[features]
+allocator_api = []
+boxed = []
+collections = []
+default = []
+
+[dev-dependencies.criterion]
+version = "0.3.0"
+
+[dev-dependencies.quickcheck]
+version = "0.9.0"
+
+[dev-dependencies.rand]
+version = "0.7"
+
+[package.metadata.docs.rs]
+all-features = true

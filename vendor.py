@@ -615,27 +615,35 @@ class CrabManager:
                 print('  {}: {}'.format(k, v))
 
 
+def clean_features_in_place(cargo_toml):
+    """Removes all side-effects of features in `cargo_toml`."""
+    features = cargo_toml.get('features')
+    if not features:
+        return
+
+    for name, value in features.items():
+        if name != 'default':
+            features[name] = []
+
+
 def remove_all_target_dependencies_in_place(cargo_toml):
-  """Removes all `target.*.dependencies` from `toml`."""
-  target = cargo_toml.get('target')
-  if not target:
-      return
+    """Removes all `target.*.dependencies` from `cargo_toml`."""
+    target = cargo_toml.get('target')
+    if not target:
+        return
 
-  empty_keys = []
-  deps_key = 'dependencies'
-  for key, values in target.items():
-      if deps_key not in values:
-          continue
+    empty_keys = []
+    for key, values in target.items():
+        values.pop('dependencies', None)
+        values.pop('dev-dependencies', None)
+        if not values:
+            empty_keys.append(key)
 
-      del values[deps_key]
-      if not values:
-          empty_keys.append(key)
-
-  if len(empty_keys) == len(target):
-      del cargo_toml['target']
-  else:
-      for key in empty_keys:
-          del target[key]
+    if len(empty_keys) == len(target):
+        del cargo_toml['target']
+    else:
+        for key in empty_keys:
+            del target[key]
 
 
 class CrateDestroyer():
@@ -646,14 +654,19 @@ class CrateDestroyer():
         self.vendor_dir = vendor_dir
 
     def _modify_cargo_toml(self, pkg_path):
-        with open(os.path.join(pkg_path, "Cargo.toml"), "r") as cargo:
+        with open(os.path.join(pkg_path, 'Cargo.toml'), 'r') as cargo:
             contents = toml.load(cargo)
 
+        package = contents['package']
+
         # Change description, license and delete license key
-        contents["package"]["description"] = "Empty crate that should not build."
-        contents["package"]["license"] = "Apache-2.0"
-        if contents["package"].get("license_file"):
-            del contents["package"]["license_file"]
+        package['description'] = 'Empty crate that should not build.'
+        package['license'] = 'Apache-2.0'
+
+        package.pop('license_file', None)
+        # If there's no build.rs but we specify `links = "foo"`, Cargo gets
+        # upset.
+        package.pop('links', None)
 
         # Some packages have cfg-specific dependencies. Remove them here; we
         # don't care about the dependencies of an empty package.
@@ -662,6 +675,12 @@ class CrateDestroyer():
         # always round-trip dumps(loads(x)) correctly when `x` has keys with
         # strings (b/242589711#comment3). The place this has bitten us so far
         # is target dependencies, which can be harmlessly removed for now.
+        #
+        # Cleaning features in-place is also necessary, since we're removing
+        # dependencies, and a feature can enable features in dependencies.
+        # Cargo errors out on `[features] foo = "bar/baz"` if `bar` isn't a
+        # dependency.
+        clean_features_in_place(contents)
         remove_all_target_dependencies_in_place(contents)
 
         with open(os.path.join(pkg_path, "Cargo.toml"), "w") as cargo:

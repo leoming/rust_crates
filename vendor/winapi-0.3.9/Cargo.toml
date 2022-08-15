@@ -107,7 +107,7 @@ dde = []
 ddraw = []
 ddrawi = []
 ddrawint = []
-debug = [ "impl-debug",]
+debug = []
 debugapi = []
 devguid = []
 devicetopology = []
@@ -417,9 +417,3 @@ xinput = []
 default-target = "x86_64-pc-windows-msvc"
 features = [ "everything", "impl-debug", "impl-default",]
 targets = [ "aarch64-pc-windows-msvc", "i686-pc-windows-msvc", "x86_64-pc-windows-msvc",]
-
-[target.i686-pc-windows-gnu.dependencies.winapi-i686-pc-windows-gnu]
-version = "0.4"
-
-[target.x86_64-pc-windows-gnu.dependencies.winapi-x86_64-pc-windows-gnu]
-version = "0.4"

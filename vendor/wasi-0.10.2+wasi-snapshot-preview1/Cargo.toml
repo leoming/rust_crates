@@ -13,7 +13,7 @@ repository = "https://github.com/bytecodealliance/wasi"
 
 [features]
 default = [ "std",]
-rustc-dep-of-std = [ "compiler_builtins", "core", "rustc-std-workspace-alloc",]
+rustc-dep-of-std = []
 std = []
 
 [dependencies.compiler_builtins]

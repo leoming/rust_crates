@@ -19,14 +19,3 @@ version = "0.3"
 
 [package.metadata.docs.rs]
 all-features = true
-
-[target."cfg(unix)".dependencies.cfg-if]
-version = "1.0"
-
-[target."cfg(unix)".dependencies.libc]
-version = "0.2.66"
-features = [ "align",]
-
-[target."cfg(windows)".dependencies.winapi]
-version = "0.3.3"
-features = [ "handleapi", "ws2def", "ws2ipdef", "ws2tcpip", "minwindef",]

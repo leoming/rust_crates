@@ -1,0 +1,19 @@
+[package]
+name = "vcpkg"
+version = "0.2.15"
+authors = [ "Jim McGrath <jimmc2@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/vcpkg"
+readme = "README.md"
+keywords = [ "build-dependencies", "windows", "macos", "linux",]
+categories = [ "development-tools::build-utils",]
+license = "Apache-2.0"
+repository = "https://github.com/mcgoo/vcpkg-rs"
+
+[dependencies]
+
+[dev-dependencies.lazy_static]
+version = "1"
+
+[dev-dependencies.tempdir]
+version = "0.3.7"
