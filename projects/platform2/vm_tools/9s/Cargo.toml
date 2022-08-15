@@ -1,0 +1,9 @@
+[package]
+name = "p9s"
+version = "0.1.0"
+authors = ["The Chromium OS Authors"]
+
+[dependencies]
+getopts = "0.2"
+libc = "0.2"
+log = "0.4"

@@ -1,0 +1,19 @@
+[package]
+name = "manatee-client"
+version = "0.24.52"
+description = "D-Bus bindings for ManaTEE"
+authors = ["The Chromium OS Authors"]
+edition = "2018"
+
+[features]
+default = []
+tools = []
+
+[dependencies]
+anyhow = "1.0.0"
+dbus = "0.9"
+getopts = "0.2"
+log = "0.4.0"
+stderrlog = "0.5.0"
+thiserror = "1.0.20"
+which = "4.0"

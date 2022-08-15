@@ -131,11 +131,11 @@ def determine_vendor_crates(vendor_path):
     """Returns a map of {crate_name: [directory]} at the given vendor_path."""
     result = collections.defaultdict(list)
     for crate_name_plus_ver in os.listdir(vendor_path):
-      name, _ = crate_name_plus_ver.rsplit('-', 1)
-      result[name].append(crate_name_plus_ver)
+        name, _ = crate_name_plus_ver.rsplit('-', 1)
+        result[name].append(crate_name_plus_ver)
 
     for crate_list in result.values():
-      crate_list.sort()
+        crate_list.sort()
     return result
 
 
@@ -197,6 +197,12 @@ def apply_patches(patches_path, vendor_path):
         _rerun_checksums(os.path.join(vendor_path, key))
 
 
+def fetch_project_cargo_toml_files(working_dir):
+    """Returns all Cargo.toml files under working_dir."""
+    projects = working_dir / 'projects'
+    return sorted(projects.glob('**/Cargo.toml'))
+
+
 def run_cargo_vendor(working_dir):
     """Runs cargo vendor.
 
@@ -210,35 +216,70 @@ def run_cargo_vendor(working_dir):
     # this.
     vendor_dir = working_dir / 'vendor'
     if vendor_dir.exists():
-      shutil.rmtree(vendor_dir)
-    subprocess.check_call(
-        ['cargo', 'vendor', '--versioned-dirs', '-v'],
-        cwd=working_dir,
-    )
+        shutil.rmtree(vendor_dir)
+
+    cargo_cmdline = ['cargo', 'vendor', '--versioned-dirs', '-v']
+    for i, cargo_toml in enumerate(fetch_project_cargo_toml_files(working_dir)):
+        # `cargo vendor` requires a 'root' manifest; select an arbitrary one,
+        # then tack other manifests on to it. Order doesn't really matter.
+        if i == 0:
+            cargo_cmdline.append('--manifest-path')
+        else:
+            cargo_cmdline.append('-s')
+        cargo_cmdline.append(str(cargo_toml))
+
+        # Autocreate src/lib.rs if necessary.
+        lib_rs = cargo_toml.parent / 'src' / 'lib.rs'
+        if not lib_rs.exists():
+            lib_rs.parent.mkdir(exist_ok=True)
+            lib_rs.write_bytes(b'')
+
+    # Always place vendor/ at the top-level directory.
+    cargo_cmdline += ('--', 'vendor')
+    subprocess.check_call(cargo_cmdline, cwd=working_dir)
 
 
 def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
-    """Load metadata for manifest at given directory.
+    """Load metadata for all projects under a given directory.
 
     Args:
-        working_dir: Directory to run from.
+        working_dir: Base directory to run from.
         filter_platform: Filter packages to ones configured for this platform.
     """
-    manifest_path = os.path.join(working_dir, 'Cargo.toml')
-    cmd = [
-        'cargo', 'metadata', '--format-version', '1', '--manifest-path',
-        manifest_path
-    ]
+    metadata_objects = []
+    for manifest_path in fetch_project_cargo_toml_files(working_dir):
+        cmd = [
+            'cargo', 'metadata', '--format-version', '1', '--manifest-path',
+            manifest_path
+        ]
+        # Conditionally add platform filter
+        if filter_platform:
+            cmd += ("--filter-platform", filter_platform)
+        output = subprocess.check_output(cmd, cwd=working_dir)
+        metadata_objects.append(json.loads(output))
+    return metadata_objects
 
-    # Conditionally add platform filter
-    if filter_platform:
-        cmd.append("--filter-platform")
-        cmd.append(filter_platform)
 
-    output = subprocess.check_output(cmd, cwd=working_dir)
+def load_all_metadata_packages(working_dir,
+                               filter_platform=DEFAULT_PLATFORM_FILTER,
+                               unique=False):
+    """Returns a list of all packages returned by load_metadata."""
+    results = []
+    for metadata in load_metadata(working_dir, filter_platform):
+        results += metadata['packages']
 
-    return json.loads(output)
+    if not unique:
+        return results
 
+    new_results = []
+    seen_keys = set()
+    for item in results:
+        key = item['id']
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        new_results.append(item)
+    return new_results
 
 class LicenseManager:
     """ Manage consolidating licenses for all packages."""
@@ -328,7 +369,7 @@ class LicenseManager:
     def generate_license(self, skip_license_check, print_map_to_file,
                          license_shorthand_file):
         """Generate single massive license file from metadata."""
-        metadata = load_metadata(self.working_dir)
+        all_packages = load_all_metadata_packages(self.working_dir, unique=True)
 
         has_license_types = set()
         bad_licenses = {}
@@ -338,13 +379,13 @@ class LicenseManager:
 
         skip_license_check = skip_license_check or []
 
-        for package in metadata['packages']:
-            pkg_name = package['name']
-
-            # Skip vendor libs directly
-            if pkg_name == "vendor_libs":
+        for package in all_packages:
+            # Skip the synthesized Cargo.toml packages that exist solely to
+            # list dependencies.
+            if 'path+file:///' in package['id']:
                 continue
 
+            pkg_name = package['name']
             if pkg_name in skip_license_check:
                 print(
                     "Skipped license check on {}. Reason: Skipped from command line"
@@ -375,14 +416,12 @@ class LicenseManager:
             # We ignore the metadata for license file because most crates don't
             # have it set. Just scan the source for licenses.
             pkg_version = package['version']
-            license_files = [
-                x for x in self._find_license_in_dir(
-                    os.path.join(self.vendor_dir, f'{pkg_name}-{pkg_version}'))
-            ]
+            license_files = list(self._find_license_in_dir(
+                os.path.join(self.vendor_dir, f'{pkg_name}-{pkg_version}')))
 
             # If there are multiple licenses, they are delimited with "OR" or "/"
             delim = ' OR ' if ' OR ' in license else '/'
-            found = license.split(delim)
+            found = [x.strip() for x in license.split(delim)]
 
             # Filter licenses to ones we support
             licenses_or = [
@@ -505,15 +544,16 @@ class CrabManager:
     def verify_traits(self):
         """ Verify that all required CRAB traits for this repository are met.
         """
-        metadata = load_metadata(self.working_dir)
+        all_packages = load_all_metadata_packages(self.working_dir, unique=True)
 
         failing_crates = {}
 
         # Verify all packages have a CRAB file associated with it and they meet
         # all our required traits
-        for package in metadata['packages']:
-            # Skip vendor_libs
-            if package['name'] == 'vendor_libs':
+        for package in all_packages:
+            # Skip the synthesized Cargo.toml packages that exist solely to
+            # list dependencies.
+            if 'path+file:///' in package['id']:
                 continue
 
             crabname = "{}-{}".format(package['name'], package['version'])
@@ -591,12 +631,16 @@ class CrateDestroyer():
             json.dump(checksum_contents, csum)
 
     def destroy_unused_crates(self):
-        all_packages = load_metadata(self.working_dir, filter_platform=None)
-        used_packages = set([p["name"] for p in load_metadata(self.working_dir)["packages"]])
+        all_packages = load_all_metadata_packages(self.working_dir,
+                                                  filter_platform=None,
+                                                  unique=True)
+        used_packages = {p["name"]
+                         for p in load_all_metadata_packages(self.working_dir)}
 
         cleaned_packages = []
-        for package in all_packages["packages"]:
-
+        # Since we're asking for _all_ metadata packages, we may see
+        # duplication.
+        for package in all_packages:
             # Skip used packages
             if package["name"] in used_packages:
                 continue

@@ -1,0 +1,12 @@
+[package]
+name = "cronista"
+version = "0.24.52"
+description = "a authenticated log for Chrome OS."
+authors = ["The Chromium OS Authors"]
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.0"
+getopts = "0.2"
+log = "0.4.0"
+thiserror = "1.0.20"
