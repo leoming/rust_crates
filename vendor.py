@@ -615,6 +615,29 @@ class CrabManager:
                 print('  {}: {}'.format(k, v))
 
 
+def remove_all_target_dependencies_in_place(cargo_toml):
+  """Removes all `target.*.dependencies` from `toml`."""
+  target = cargo_toml.get('target')
+  if not target:
+      return
+
+  empty_keys = []
+  deps_key = 'dependencies'
+  for key, values in target.items():
+      if deps_key not in values:
+          continue
+
+      del values[deps_key]
+      if not values:
+          empty_keys.append(key)
+
+  if len(empty_keys) == len(target):
+      del cargo_toml['target']
+  else:
+      for key in empty_keys:
+          del target[key]
+
+
 class CrateDestroyer():
     LIB_RS_BODY = """compile_error!("This crate cannot be built for this configuration.");\n"""
 
@@ -631,6 +654,15 @@ class CrateDestroyer():
         contents["package"]["license"] = "Apache-2.0"
         if contents["package"].get("license_file"):
             del contents["package"]["license_file"]
+
+        # Some packages have cfg-specific dependencies. Remove them here; we
+        # don't care about the dependencies of an empty package.
+        #
+        # This is a load-bearing optimization: `dev-python/toml` doesn't
+        # always round-trip dumps(loads(x)) correctly when `x` has keys with
+        # strings (b/242589711#comment3). The place this has bitten us so far
+        # is target dependencies, which can be harmlessly removed for now.
+        remove_all_target_dependencies_in_place(contents)
 
         with open(os.path.join(pkg_path, "Cargo.toml"), "w") as cargo:
             toml.dump(contents, cargo)
