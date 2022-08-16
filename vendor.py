@@ -290,7 +290,8 @@ class LicenseManager:
         'Apache-2.0': 'Apache-2.0',
         'MIT': 'MIT',
         'BSD-3-Clause': 'BSD-3',
-        'ISC': 'ISC'
+        'ISC': 'ISC',
+        'unicode': 'unicode',
     }
 
     # Prefer to take attribution licenses in this order. All these require that
@@ -378,6 +379,7 @@ class LicenseManager:
         license_map = {}
 
         skip_license_check = skip_license_check or []
+        has_unicode_license = False
 
         for package in all_packages:
             # Skip the synthesized Cargo.toml packages that exist solely to
@@ -418,6 +420,30 @@ class LicenseManager:
             pkg_version = package['version']
             license_files = list(self._find_license_in_dir(
                 os.path.join(self.vendor_dir, f'{pkg_name}-{pkg_version}')))
+
+            # FIXME(b/240953811): The code later in this loop is only
+            # structured to handle ORs, not ANDs. Fortunately, this license in
+            # particular is `AND`ed between a super common license (Apache) and
+            # a more obscure one (unicode). This hack is specifically intended
+            # for the `unicode-ident` crate, though no crate name check is
+            # made, since it's OK other crates happen to have this license.
+            if license == '(MIT OR Apache-2.0) AND Unicode-DFS-2016':
+                has_unicode_license = True
+                # We'll check later to be sure MIT or Apache-2.0 is represented
+                # properly.
+                for x in license_files:
+                    if os.path.basename(x) == 'LICENSE-UNICODE':
+                        license_file = x
+                        break
+                else:
+                    raise ValueError('No LICENSE-UNICODE found in '
+                                     f'{license_files}')
+                license_map[pkg_name] = {
+                    "license": license,
+                    "license_file": license_file,
+                }
+                has_license_types.add('unicode')
+                continue
 
             # If there are multiple licenses, they are delimited with "OR" or "/"
             delim = ' OR ' if ' OR ' in license else '/'
@@ -502,6 +528,11 @@ class LicenseManager:
             raise Exception(
                 "Unhandled missing license file. "
                 "Make sure all are accounted for before continuing.")
+
+        if has_unicode_license:
+            if self.APACHE_LICENSE not in has_license_types:
+                raise ValueError('Need the apache license; currently have: '
+                                 f'{sorted(has_license_types)}')
 
         sorted_licenses = sorted(has_license_types)
         print("Add the following licenses to the ebuild:\n",
