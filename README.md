@@ -47,11 +47,24 @@ In order to update any package, follow these steps:
 ## Adding patches
 
 When it is necessary to patch a package due to incompatibility, you can create
-a patch targetting the specific package and store it in
-`patches/${package_name}-${package_version}/` with the extension `.patch`. The
-patch will be applied when you run `vendor.py`. If `vendor.py` dies because it
-failed to find a directory to patch in, it's likely that the dependency that we
-have patches for has been removed.
+a patch targeting the specific package and store it in
+`patches/`. For any given `${crate}` at `${version}`, if
+`patches/${crate}-${version}` exists, the patches from that directory are
+applied to the crate. If such a directory does not exist, `patches/${crate}` is
+checked. Similarly, if this exists, patches are applied; otherwise, the crate
+is left unpatched.
+
+If `./vendor.py` complains about a specific directory in `patches/` not having
+a corresponding `vendor/` directory, the most likely fixes are:
+
+* the crate is no longer required, and the patches should be deleted.
+* the crate has been upgraded, and the patches that were previously applied
+  should be evaluated for whether they are still relevant.
+
+Patches can come in two forms. Files with names ending in `.patch` are always applied with
+`patch -p1` to the vendor directory. Executable files that do not have names
+ending in `patch` will be executed in the vendor directory which they should
+apply to. All other files are ignored.
 
 ## Testing updates
 

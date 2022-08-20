@@ -122,9 +122,17 @@ def apply_single_patch(patch, workdir):
     Returns:
         True if successful. False otherwise.
     """
-    print(f"-- Applying {patch} to {workdir}")
     proc = subprocess.run(["patch", "-p1", "-i", patch], cwd=workdir)
     return proc.returncode == 0
+
+
+def apply_patch_script(script, workdir):
+    """Run the given patch script, returning whether it exited cleanly.
+
+    Returns:
+        True if successful. False otherwise.
+    """
+    return subprocess.run([script], cwd=workdir).returncode == 0
 
 
 def determine_vendor_crates(vendor_path):
@@ -153,6 +161,7 @@ def apply_patches(patches_path, vendor_path):
     if not pathlib.Path(patches_path).is_dir():
         return
 
+    patches_failed = False
     vendor_crate_map = determine_vendor_crates(vendor_path)
     # Look for all patches and apply them
     for d in os.listdir(patches_path):
@@ -162,35 +171,45 @@ def apply_patches(patches_path, vendor_path):
         if not os.path.isdir(dir_path):
             continue
 
+        # We accept one of two forms here:
+        # - direct targets (these name # `${crate_name}-${version}`)
+        # - simply the crate name (which applies to all versions of the
+        #   crate)
+        direct_target = os.path.join(vendor_path, d)
+        if os.path.isdir(direct_target):
+            patch_targets = [d]
+        elif d in vendor_crate_map:
+            patch_targets = vendor_crate_map[d]
+        else:
+            raise RuntimeError(f'Unknown crate in {vendor_path}: {d}')
+
         for patch in os.listdir(dir_path):
             file_path = os.path.join(dir_path, patch)
 
             # Skip if not a patch file
-            if not os.path.isfile(file_path) or not patch.endswith(".patch"):
+            if not os.path.isfile(file_path):
                 continue
 
-            # We accept one of two forms here:
-            # - direct targets (these name # `${crate_name}-${version}`)
-            # - simply the crate name (which applies to all versions of the
-            #   crate)
-            direct_target = os.path.join(vendor_path, d)
-            if os.path.isdir(direct_target):
-                # If there are any patches, queue checksums for that folder.
-                checksums_for[d] = True
-
-                # Apply the patch. Exit from patch loop if patching failed.
-                if not apply_single_patch(file_path, direct_target):
-                    print("Failed to apply patch: {}".format(patch))
-                    break
-            elif d in vendor_crate_map:
-                for crate in vendor_crate_map[d]:
-                  checksums_for[crate] = True
-                  target = os.path.join(vendor_path, crate)
-                  if not apply_single_patch(file_path, target):
-                      print(f'Failed to apply patch {patch} to {target}')
-                      break
+            if patch.endswith(".patch"):
+                apply = apply_single_patch
+            elif os.access(file_path, os.X_OK):
+                apply = apply_patch_script
             else:
-                raise RuntimeError(f'Unknown crate in {vendor_path}: {d}')
+                # Unrecognized. Skip it.
+                continue
+
+            for target_name in patch_targets:
+                checksums_for[target_name] = True
+                target = os.path.join(vendor_path, target_name)
+                print(f"-- Applying {file_path} to {target}")
+                if not apply(file_path, target):
+                    print(f"Failed to apply {file_path} to {target}")
+                    patches_failed = True
+
+    # Do this late, so we can report all of the failing patches in one
+    # invocation.
+    if patches_failed:
+        raise ValueError('Patches failed; please see above logs')
 
     # Re-run checksums for all modified packages since we applied patches.
     for key in checksums_for.keys():
