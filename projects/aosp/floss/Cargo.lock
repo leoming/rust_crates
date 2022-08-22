@@ -785,6 +785,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-bigint"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f93ab6289c7b344a8a9f60f88d80aa20032336fe78da341afc91c8a2341fc75f"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-derive"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -793,6 +804,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "num-integer"
+version = "0.1.45"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "225d3389fb3509a24c93f5c29eb6bde2586b98d9f016636dff58d7c6f7569cd9"
+dependencies = [
+ "autocfg",
+ "num-traits",
 ]
 
 [[package]]
@@ -1393,7 +1414,9 @@ dependencies = [
  "lazy_static",
  "log",
  "nix 0.19.1",
+ "num-bigint",
  "num-derive",
+ "num-integer",
  "num-traits",
  "paste",
  "proc-macro2",
@@ -1401,6 +1424,7 @@ dependencies = [
  "protoc-grpcio",
  "protoc-rust",
  "quote",
+ "rand",
  "regex",
  "rustyline",
  "rustyline-derive",
