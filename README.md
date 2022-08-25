@@ -10,9 +10,12 @@ about this repo.
 
 # Updating packages
 
-In order to update any package, follow these steps:
+In order to update or add any package, follow these steps:
 
-* Modify `Cargo.toml` to add, remove or upgrade packages.
+* Find the project in `projects/` corresponding to the first-party package you'd
+  like to update. If it does not exist, please see the "Adding a first-party
+  package," section.
+* Modify its `Cargo.toml` to add, remove or upgrade packages.
 * Run `python vendor.py`
     * This runs `cargo vendor` first, which updates `Cargo.lock` and puts
       downloaded crates into the `vendor` directory
@@ -72,3 +75,17 @@ Updates to this repo will be captured by the CQ. To directly test changes,
 either build the `net-wireless/floss` package, or run
 `cros_workon --board=${BOARD} dev-rust/third-party-crates-src` and build
 packages + run tests for your board of choice.
+
+## Adding a first-party package
+
+The `packages/` subdirectory contains a set of `Cargo.toml` files that roughly
+correspond to what exists in the ChromeOS tree. These exist only to provide
+dependency information with which we can create our `vendor/` directory, so
+everything is removed except for author information, dependencies, and (if
+necessary) a minimal set of features. Dependency sections outside of what would
+build for ChromeOS, like `[target.'cfg(windows)'.dependencies]`, are also
+removed.
+
+Admittedly, it's sort of awkward to have two `Cargo.toml`s for each first-party
+project. It may be worth trying to consolidate this in the future, though our
+future bazel migration potentially influences what the 'ideal' setup here is.
