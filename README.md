@@ -86,6 +86,15 @@ necessary) a minimal set of features. Dependency sections outside of what would
 build for ChromeOS, like `[target.'cfg(windows)'.dependencies]`, are also
 removed.
 
+Once your `Cargo.toml` seems correct and you're ready to test, run
+`packages/populate-workspace.py` to add it to the workspace.
+
 Admittedly, it's sort of awkward to have two `Cargo.toml`s for each first-party
 project. It may be worth trying to consolidate this in the future, though our
 future bazel migration potentially influences what the 'ideal' setup here is.
+
+### My crate's name conflicts with another first party's
+
+The crate names in these `Cargo.toml`s aren't really relevant or used; please
+add some context that seems meaningful to your package's name, or do that to the
+conflicting package.
