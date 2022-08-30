@@ -7,6 +7,7 @@
 [workspace]
 members = [
     "aosp/floss",
+    "platform/crosvm",
     "platform2/chromeos-dbus-bindings",
     "platform2/cronista",
     "platform2/crosh",

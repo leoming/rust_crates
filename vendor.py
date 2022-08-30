@@ -275,10 +275,12 @@ class LicenseManager:
     # These are all the licenses we support. Keys are what is seen in metadata and
     # values are what is expected by the ebuild.
     SUPPORTED_LICENSES = {
+        '0BSD': '0BSD',
         'Apache-2.0': 'Apache-2.0',
-        'MIT': 'MIT',
         'BSD-3-Clause': 'BSD-3',
         'ISC': 'ISC',
+        'MIT': 'MIT',
+        'MPL-2.0': 'MPL-2.0',
         'unicode': 'unicode',
     }
 
@@ -317,6 +319,11 @@ class LicenseManager:
     # upstream the patch instead.
     STATIC_LICENSE_MAP = {
         # "package name": ( "license name", "license file relative location")
+        # Patch for adding this is upstream, but the patch application doesn't
+        # apply to `cargo metadata`. This is presumably because it can't detect
+        # our vendor directory.
+        # https://gitlab.freedesktop.org/slirp/libslirp-sys/-/merge_requests/6
+        'libslirp-sys': ('MIT', 'LICENSE'),
     }
 
     def __init__(self, working_dir, vendor_dir):
