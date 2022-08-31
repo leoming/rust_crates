@@ -29,11 +29,11 @@ def _rerun_checksums(package_path):
     Writes resulting checksums to $package_path/.cargo-checksum.json.
     """
     hashes = dict()
-    checksum_path = os.path.join(package_path, '.cargo-checksum.json')
+    checksum_path = os.path.join(package_path, ".cargo-checksum.json")
     if not pathlib.Path(checksum_path).is_file():
         return False
 
-    with open(checksum_path, 'r') as fread:
+    with open(checksum_path, "r") as fread:
         contents = json.load(fread)
 
     for root, _, files in os.walk(package_path, topdown=True):
@@ -43,7 +43,7 @@ def _rerun_checksums(package_path):
                 continue
 
             file_path = os.path.join(root, f)
-            with open(file_path, 'rb') as frb:
+            with open(file_path, "rb") as frb:
                 m = hashlib.sha256()
                 m.update(frb.read())
                 d = m.hexdigest()
@@ -53,17 +53,18 @@ def _rerun_checksums(package_path):
                 hashes[key] = d
 
     if hashes:
-        print("{} regenerated {} hashes".format(package_path,
-                                                len(hashes.keys())))
-        contents['files'] = hashes
-        with open(checksum_path, 'w') as fwrite:
+        print(
+            "{} regenerated {} hashes".format(package_path, len(hashes.keys()))
+        )
+        contents["files"] = hashes
+        with open(checksum_path, "w") as fwrite:
             json.dump(contents, fwrite, sort_keys=True)
 
     return True
 
 
 def _remove_OWNERS_checksum(root):
-    """ Delete all OWNERS files from the checksum file.
+    """Delete all OWNERS files from the checksum file.
 
     Args:
         root: Root directory for the vendored crate.
@@ -71,31 +72,31 @@ def _remove_OWNERS_checksum(root):
     Returns:
         True if OWNERS was found and cleaned up. Otherwise False.
     """
-    checksum_path = os.path.join(root, '.cargo-checksum.json')
+    checksum_path = os.path.join(root, ".cargo-checksum.json")
     if not pathlib.Path(checksum_path).is_file():
         return False
 
-    with open(checksum_path, 'r') as fread:
+    with open(checksum_path, "r") as fread:
         contents = json.load(fread)
 
     del_keys = []
-    for cfile in contents['files']:
-        if 'OWNERS' in cfile:
+    for cfile in contents["files"]:
+        if "OWNERS" in cfile:
             del_keys.append(cfile)
 
     for key in del_keys:
-        del contents['files'][key]
+        del contents["files"][key]
 
     if del_keys:
-        print('{} deleted: {}'.format(root, del_keys))
-        with open(checksum_path, 'w') as fwrite:
+        print("{} deleted: {}".format(root, del_keys))
+        with open(checksum_path, "w") as fwrite:
             json.dump(contents, fwrite, sort_keys=True)
 
     return bool(del_keys)
 
 
 def cleanup_owners(vendor_path):
-    """ Remove owners checksums from the vendor directory.
+    """Remove owners checksums from the vendor directory.
 
     We currently do not check in the OWNERS files from vendored crates because
     they interfere with the find-owners functionality in gerrit. This cleanup
@@ -113,7 +114,7 @@ def cleanup_owners(vendor_path):
                 deps_cleaned.append(d)
 
     if deps_cleaned:
-        print('Cleanup owners:\n {}'.format("\n".join(deps_cleaned)))
+        print("Cleanup owners:\n {}".format("\n".join(deps_cleaned)))
 
 
 def apply_single_patch(patch, workdir):
@@ -139,7 +140,7 @@ def determine_vendor_crates(vendor_path):
     """Returns a map of {crate_name: [directory]} at the given vendor_path."""
     result = collections.defaultdict(list)
     for crate_name_plus_ver in os.listdir(vendor_path):
-        name, _ = crate_name_plus_ver.rsplit('-', 1)
+        name, _ = crate_name_plus_ver.rsplit("-", 1)
         result[name].append(crate_name_plus_ver)
 
     for crate_list in result.values():
@@ -181,7 +182,7 @@ def apply_patches(patches_path, vendor_path):
         elif d in vendor_crate_map:
             patch_targets = vendor_crate_map[d]
         else:
-            raise RuntimeError(f'Unknown crate in {vendor_path}: {d}')
+            raise RuntimeError(f"Unknown crate in {vendor_path}: {d}")
 
         for patch in os.listdir(dir_path):
             file_path = os.path.join(dir_path, patch)
@@ -209,7 +210,7 @@ def apply_patches(patches_path, vendor_path):
     # Do this late, so we can report all of the failing patches in one
     # invocation.
     if patches_failed:
-        raise ValueError('Patches failed; please see above logs')
+        raise ValueError("Patches failed; please see above logs")
 
     # Re-run checksums for all modified packages since we applied patches.
     for key in checksums_for.keys():
@@ -218,7 +219,7 @@ def apply_patches(patches_path, vendor_path):
 
 def get_workspace_cargo_toml(working_dir):
     """Returns all Cargo.toml files under working_dir."""
-    return [working_dir / 'projects' / 'Cargo.toml']
+    return [working_dir / "projects" / "Cargo.toml"]
 
 
 def run_cargo_vendor(working_dir):
@@ -232,18 +233,18 @@ def run_cargo_vendor(working_dir):
     # repeated `./vendor.py` invocations trying to apply patches to
     # already-patched sources. Remove the existing vendor directory to avoid
     # this.
-    vendor_dir = working_dir / 'vendor'
+    vendor_dir = working_dir / "vendor"
     if vendor_dir.exists():
         shutil.rmtree(vendor_dir)
 
     cargo_cmdline = [
-        'cargo',
-        'vendor',
-        '--versioned-dirs',
-        '-v',
-        '--manifest-path=projects/Cargo.toml',
-        '--',
-        'vendor',
+        "cargo",
+        "vendor",
+        "--versioned-dirs",
+        "-v",
+        "--manifest-path=projects/Cargo.toml",
+        "--",
+        "vendor",
     ]
     subprocess.check_call(cargo_cmdline, cwd=working_dir)
 
@@ -257,10 +258,10 @@ def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
     """
     metadata_objects = []
     cmd = [
-        'cargo',
-        'metadata',
-        '--format-version=1',
-        '--manifest-path=projects/Cargo.toml',
+        "cargo",
+        "metadata",
+        "--format-version=1",
+        "--manifest-path=projects/Cargo.toml",
     ]
     # Conditionally add platform filter
     if filter_platform:
@@ -270,36 +271,36 @@ def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
 
 
 class LicenseManager:
-    """ Manage consolidating licenses for all packages."""
+    """Manage consolidating licenses for all packages."""
 
     # These are all the licenses we support. Keys are what is seen in metadata and
     # values are what is expected by the ebuild.
     SUPPORTED_LICENSES = {
-        '0BSD': '0BSD',
-        'Apache-2.0': 'Apache-2.0',
-        'BSD-3-Clause': 'BSD-3',
-        'ISC': 'ISC',
-        'MIT': 'MIT',
-        'MPL-2.0': 'MPL-2.0',
-        'unicode': 'unicode',
+        "0BSD": "0BSD",
+        "Apache-2.0": "Apache-2.0",
+        "BSD-3-Clause": "BSD-3",
+        "ISC": "ISC",
+        "MIT": "MIT",
+        "MPL-2.0": "MPL-2.0",
+        "unicode": "unicode",
     }
 
     # Prefer to take attribution licenses in this order. All these require that
     # we actually use the license file found in the package so they MUST have
     # a license file set.
-    PREFERRED_ATTRIB_LICENSE_ORDER = ['MIT', 'BSD-3', 'ISC']
+    PREFERRED_ATTRIB_LICENSE_ORDER = ["MIT", "BSD-3", "ISC"]
 
     # If Apache license is found, always prefer it (simplifies attribution)
-    APACHE_LICENSE = 'Apache-2.0'
+    APACHE_LICENSE = "Apache-2.0"
 
     # Regex for license files found in the vendored directories. Search for
     # these files with re.IGNORECASE.
     #
     # These will be searched in order with the earlier entries being preferred.
     LICENSE_NAMES_REGEX = [
-        r'^license-mit$',
-        r'^copyright$',
-        r'^licen[cs]e.*$',
+        r"^license-mit$",
+        r"^copyright$",
+        r"^licen[cs]e.*$",
     ]
 
     # Some crates have their license file in other crates. This usually occurs
@@ -307,10 +308,10 @@ class LicenseManager:
     # license isn't updated in each sub-crate. In these cases, we can just
     # ignore these packages.
     MAP_LICENSE_TO_OTHER = {
-        'failure_derive': 'failure',
-        'grpcio-compiler': 'grpcio',
-        'grpcio-sys': 'grpcio',
-        'rustyline-derive': 'rustyline',
+        "failure_derive": "failure",
+        "grpcio-compiler": "grpcio",
+        "grpcio-sys": "grpcio",
+        "rustyline-derive": "rustyline",
     }
 
     # Map a package to a specific license and license file. Only use this if
@@ -323,7 +324,7 @@ class LicenseManager:
         # apply to `cargo metadata`. This is presumably because it can't detect
         # our vendor directory.
         # https://gitlab.freedesktop.org/slirp/libslirp-sys/-/merge_requests/6
-        'libslirp-sys': ('MIT', 'LICENSE'),
+        "libslirp-sys": ("MIT", "LICENSE"),
     }
 
     def __init__(self, working_dir, vendor_dir):
@@ -344,26 +345,27 @@ class LicenseManager:
                     break
 
     def _guess_license_type(self, license_file):
-        if '-MIT' in license_file:
-            return 'MIT'
-        elif '-APACHE' in license_file:
-            return 'APACHE'
-        elif '-BSD' in license_file:
-            return 'BSD-3'
+        if "-MIT" in license_file:
+            return "MIT"
+        elif "-APACHE" in license_file:
+            return "APACHE"
+        elif "-BSD" in license_file:
+            return "BSD-3"
 
-        with open(license_file, 'r') as f:
+        with open(license_file, "r") as f:
             lines = f.read()
-            if 'MIT' in lines:
-                return 'MIT'
-            elif 'Apache' in lines:
-                return 'APACHE'
-            elif 'BSD 3-Clause' in lines:
-                return 'BSD-3'
+            if "MIT" in lines:
+                return "MIT"
+            elif "Apache" in lines:
+                return "APACHE"
+            elif "BSD 3-Clause" in lines:
+                return "BSD-3"
 
-        return ''
+        return ""
 
-    def generate_license(self, skip_license_check, print_map_to_file,
-                         license_shorthand_file):
+    def generate_license(
+        self, skip_license_check, print_map_to_file, license_shorthand_file
+    ):
         """Generate single massive license file from metadata."""
         metadata = load_metadata(self.working_dir)
 
@@ -379,20 +381,24 @@ class LicenseManager:
         for package in metadata["packages"]:
             # Skip the synthesized Cargo.toml packages that exist solely to
             # list dependencies.
-            if 'path+file:///' in package['id']:
+            if "path+file:///" in package["id"]:
                 continue
 
-            pkg_name = package['name']
+            pkg_name = package["name"]
             if pkg_name in skip_license_check:
                 print(
-                    "Skipped license check on {}. Reason: Skipped from command line"
-                    .format(pkg_name))
+                    "Skipped license check on {}. Reason: Skipped from command line".format(
+                        pkg_name
+                    )
+                )
                 continue
 
             if pkg_name in self.MAP_LICENSE_TO_OTHER:
                 print(
-                    'Skipped license check on {}. Reason: License already in {}'
-                    .format(pkg_name, self.MAP_LICENSE_TO_OTHER[pkg_name]))
+                    "Skipped license check on {}. Reason: License already in {}".format(
+                        pkg_name, self.MAP_LICENSE_TO_OTHER[pkg_name]
+                    )
+                )
                 continue
 
             # Check if we have a static license map for this package. Use the
@@ -408,13 +414,16 @@ class LicenseManager:
             license_files = []
             # use `or ''` instead of get's default, since `package` may have a
             # None value for 'license'.
-            license = package.get('license') or ''
+            license = package.get("license") or ""
 
             # We ignore the metadata for license file because most crates don't
             # have it set. Just scan the source for licenses.
-            pkg_version = package['version']
-            license_files = list(self._find_license_in_dir(
-                os.path.join(self.vendor_dir, f'{pkg_name}-{pkg_version}')))
+            pkg_version = package["version"]
+            license_files = list(
+                self._find_license_in_dir(
+                    os.path.join(self.vendor_dir, f"{pkg_name}-{pkg_version}")
+                )
+            )
 
             # FIXME(b/240953811): The code later in this loop is only
             # structured to handle ORs, not ANDs. Fortunately, this license in
@@ -422,31 +431,33 @@ class LicenseManager:
             # a more obscure one (unicode). This hack is specifically intended
             # for the `unicode-ident` crate, though no crate name check is
             # made, since it's OK other crates happen to have this license.
-            if license == '(MIT OR Apache-2.0) AND Unicode-DFS-2016':
+            if license == "(MIT OR Apache-2.0) AND Unicode-DFS-2016":
                 has_unicode_license = True
                 # We'll check later to be sure MIT or Apache-2.0 is represented
                 # properly.
                 for x in license_files:
-                    if os.path.basename(x) == 'LICENSE-UNICODE':
+                    if os.path.basename(x) == "LICENSE-UNICODE":
                         license_file = x
                         break
                 else:
-                    raise ValueError('No LICENSE-UNICODE found in '
-                                     f'{license_files}')
+                    raise ValueError(
+                        "No LICENSE-UNICODE found in " f"{license_files}"
+                    )
                 license_map[pkg_name] = {
                     "license": license,
                     "license_file": license_file,
                 }
-                has_license_types.add('unicode')
+                has_license_types.add("unicode")
                 continue
 
             # If there are multiple licenses, they are delimited with "OR" or "/"
-            delim = ' OR ' if ' OR ' in license else '/'
+            delim = " OR " if " OR " in license else "/"
             found = [x.strip() for x in license.split(delim)]
 
             # Filter licenses to ones we support
             licenses_or = [
-                self.SUPPORTED_LICENSES[f] for f in found
+                self.SUPPORTED_LICENSES[f]
+                for f in found
                 if f in self.SUPPORTED_LICENSES
             ]
 
@@ -454,7 +465,7 @@ class LicenseManager:
             # license attribution (we can use existing Apache notice)
             if self.APACHE_LICENSE in licenses_or:
                 has_license_types.add(self.APACHE_LICENSE)
-                license_map[pkg_name] = {'license': self.APACHE_LICENSE}
+                license_map[pkg_name] = {"license": self.APACHE_LICENSE}
 
             # Handle single license that has at least one license file
             # We pick the first license file and the license
@@ -465,12 +476,13 @@ class LicenseManager:
 
                     has_license_types.add(l)
                     license_map[pkg_name] = {
-                        'license': l,
-                        'license_file': os.path.relpath(lf, self.working_dir),
+                        "license": l,
+                        "license_file": os.path.relpath(lf, self.working_dir),
                     }
                 else:
                     bad_licenses[pkg_name] = "{} missing license file".format(
-                        licenses_or[0])
+                        licenses_or[0]
+                    )
             # Handle multiple licenses
             elif len(licenses_or) > 1:
                 # Check preferred licenses in order
@@ -484,10 +496,10 @@ class LicenseManager:
                             license_found = True
                             has_license_types.add(l)
                             license_map[pkg_name] = {
-                                'license':
-                                l,
-                                'license_file':
-                                os.path.relpath(f, self.working_dir),
+                                "license": l,
+                                "license_file": os.path.relpath(
+                                    f, self.working_dir
+                                ),
                             }
                             break
 
@@ -500,46 +512,59 @@ class LicenseManager:
         # If we had any bad licenses, we need to abort
         if bad_licenses:
             for k in bad_licenses.keys():
-                print("{} had no acceptable licenses: {}".format(
-                    k, bad_licenses[k]))
+                print(
+                    "{} had no acceptable licenses: {}".format(
+                        k, bad_licenses[k]
+                    )
+                )
             raise Exception("Bad licenses in vendored packages.")
 
         # Write license map to file
         if print_map_to_file:
-            with open(os.path.join(self.working_dir, print_map_to_file),
-                      'w') as lfile:
+            with open(
+                os.path.join(self.working_dir, print_map_to_file), "w"
+            ) as lfile:
                 json.dump(license_map, lfile, sort_keys=True)
 
         # Raise missing licenses unless we have a valid reason to ignore them
         raise_missing_license = False
         for name, v in license_map.items():
-            if 'license_file' not in v and v.get('license',
-                                                 '') != self.APACHE_LICENSE:
+            if (
+                "license_file" not in v
+                and v.get("license", "") != self.APACHE_LICENSE
+            ):
                 raise_missing_license = True
-                print("  {}: Missing license file. Fix or add to ignorelist.".
-                      format(name))
+                print(
+                    "  {}: Missing license file. Fix or add to ignorelist.".format(
+                        name
+                    )
+                )
 
         if raise_missing_license:
             raise Exception(
                 "Unhandled missing license file. "
-                "Make sure all are accounted for before continuing.")
+                "Make sure all are accounted for before continuing."
+            )
 
         if has_unicode_license:
             if self.APACHE_LICENSE not in has_license_types:
-                raise ValueError('Need the apache license; currently have: '
-                                 f'{sorted(has_license_types)}')
+                raise ValueError(
+                    "Need the apache license; currently have: "
+                    f"{sorted(has_license_types)}"
+                )
 
         sorted_licenses = sorted(has_license_types)
-        print("Add the following licenses to the ebuild:\n",
-              sorted_licenses)
-        header = textwrap.dedent("""\
+        print("Add the following licenses to the ebuild:\n", sorted_licenses)
+        header = textwrap.dedent(
+            """\
             # File to describe the licenses used by this registry.
             # Used to it's easy to automatically verify ebuilds are updated.
             # Each line is a license. Lines starting with # are comments.
-            """)
-        with open(license_shorthand_file, 'w', encoding='utf-8') as f:
+            """
+        )
+        with open(license_shorthand_file, "w", encoding="utf-8") as f:
             f.write(header)
-            f.write('\n'.join(sorted_licenses))
+            f.write("\n".join(sorted_licenses))
 
 
 # TODO(abps) - This needs to be replaced with datalog later. We should compile
@@ -547,6 +572,7 @@ class LicenseManager:
 #              instead.
 class CrabManager:
     """Manage audit files."""
+
     def __init__(self, working_dir, crab_dir):
         self.working_dir = working_dir
         self.crab_dir = crab_dir
@@ -557,19 +583,18 @@ class CrabManager:
         Args:
             crabdata: Dict with crab keys in standard templated format.
         """
-        common = crabdata['common']
+        common = crabdata["common"]
         # TODO(b/200578411) - Figure out what conditions we should enforce as
         #                     part of the audit.
         conditions = [
-            common.get('deny', None),
+            common.get("deny", None),
         ]
 
         # If any conditions are true, this crate is not acceptable.
         return any(conditions)
 
     def verify_traits(self):
-        """ Verify that all required CRAB traits for this repository are met.
-        """
+        """Verify that all required CRAB traits for this repository are met."""
         metadata = load_metadata(self.working_dir)
 
         failing_crates = {}
@@ -579,10 +604,10 @@ class CrabManager:
         for package in metadata["packages"]:
             # Skip the synthesized Cargo.toml packages that exist solely to
             # list dependencies.
-            if 'path+file:///' in package['id']:
+            if "path+file:///" in package["id"]:
                 continue
 
-            crabname = "{}-{}".format(package['name'], package['version'])
+            crabname = "{}-{}".format(package["name"], package["version"])
             filename = os.path.join(self.crab_dir, "{}.toml".format(crabname))
 
             # If crab file doesn't exist, the crate fails
@@ -590,13 +615,15 @@ class CrabManager:
                 failing_crates[crabname] = "No crab file".format(filename)
                 continue
 
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 crabdata = toml.loads(f.read())
 
             # If crab file's crate_name and version keys don't match this
             # package, it also fails. This is just housekeeping...
-            if package['name'] != crabdata['crate_name'] or package[
-                    'version'] != crabdata['version']:
+            if (
+                package["name"] != crabdata["crate_name"]
+                or package["version"] != crabdata["version"]
+            ):
                 failing_crates[crabname] = "Crate name or version don't match"
                 continue
 
@@ -605,43 +632,43 @@ class CrabManager:
 
         # If we had any failing crates, list them now
         if failing_crates:
-            print('Failed CRAB audit:')
+            print("Failed CRAB audit:")
             for k, v in failing_crates.items():
-                print('  {}: {}'.format(k, v))
+                print("  {}: {}".format(k, v))
 
 
 def clean_features_in_place(cargo_toml):
     """Removes all side-effects of features in `cargo_toml`."""
-    features = cargo_toml.get('features')
+    features = cargo_toml.get("features")
     if not features:
         return
 
     for name, value in features.items():
-        if name != 'default':
+        if name != "default":
             features[name] = []
 
 
 def remove_all_target_dependencies_in_place(cargo_toml):
     """Removes all `target.*.dependencies` from `cargo_toml`."""
-    target = cargo_toml.get('target')
+    target = cargo_toml.get("target")
     if not target:
         return
 
     empty_keys = []
     for key, values in target.items():
-        values.pop('dependencies', None)
-        values.pop('dev-dependencies', None)
+        values.pop("dependencies", None)
+        values.pop("dev-dependencies", None)
         if not values:
             empty_keys.append(key)
 
     if len(empty_keys) == len(target):
-        del cargo_toml['target']
+        del cargo_toml["target"]
     else:
         for key in empty_keys:
             del target[key]
 
 
-class CrateDestroyer():
+class CrateDestroyer:
     LIB_RS_BODY = """compile_error!("This crate cannot be built for this configuration.");\n"""
 
     def __init__(self, working_dir, vendor_dir):
@@ -649,19 +676,19 @@ class CrateDestroyer():
         self.vendor_dir = vendor_dir
 
     def _modify_cargo_toml(self, pkg_path):
-        with open(os.path.join(pkg_path, 'Cargo.toml'), 'r') as cargo:
+        with open(os.path.join(pkg_path, "Cargo.toml"), "r") as cargo:
             contents = toml.load(cargo)
 
-        package = contents['package']
+        package = contents["package"]
 
         # Change description, license and delete license key
-        package['description'] = 'Empty crate that should not build.'
-        package['license'] = 'Apache-2.0'
+        package["description"] = "Empty crate that should not build."
+        package["license"] = "Apache-2.0"
 
-        package.pop('license_file', None)
+        package.pop("license_file", None)
         # If there's no build.rs but we specify `links = "foo"`, Cargo gets
         # upset.
-        package.pop('links', None)
+        package.pop("links", None)
 
         # Some packages have cfg-specific dependencies. Remove them here; we
         # don't care about the dependencies of an empty package.
@@ -684,12 +711,12 @@ class CrateDestroyer():
     def _replace_source_contents(self, package_path):
         # First load the checksum file before starting
         checksum_file = os.path.join(package_path, ".cargo-checksum.json")
-        with open(checksum_file, 'r') as csum:
+        with open(checksum_file, "r") as csum:
             checksum_contents = json.load(csum)
 
         # Also load the cargo.toml file which we need to write back
         cargo_file = os.path.join(package_path, "Cargo.toml")
-        with open(cargo_file, 'rb') as cfile:
+        with open(cargo_file, "rb") as cfile:
             cargo_contents = cfile.read()
 
         shutil.rmtree(package_path)
@@ -700,17 +727,18 @@ class CrateDestroyer():
             librs.write(self.LIB_RS_BODY)
 
         # Restore cargo.toml
-        with open(cargo_file, 'wb') as cfile:
+        with open(cargo_file, "wb") as cfile:
             cfile.write(cargo_contents)
 
         # Restore checksum
-        with open(checksum_file, 'w') as csum:
+        with open(checksum_file, "w") as csum:
             json.dump(checksum_contents, csum)
 
     def destroy_unused_crates(self):
         metadata = load_metadata(self.working_dir, filter_platform=None)
-        used_packages = {p["name"]
-                         for p in load_metadata(self.working_dir)["packages"]}
+        used_packages = {
+            p["name"] for p in load_metadata(self.working_dir)["packages"]
+        }
 
         cleaned_packages = []
         # Since we're asking for _all_ metadata packages, we may see
@@ -721,7 +749,10 @@ class CrateDestroyer():
                 continue
 
             # Detect the correct package path to destroy
-            pkg_path = os.path.join(self.vendor_dir, "{}-{}".format(package["name"], package["version"]))
+            pkg_path = os.path.join(
+                self.vendor_dir,
+                "{}-{}".format(package["name"], package["version"]),
+            )
             if not os.path.isdir(pkg_path):
                 print(f'Crate {package["name"]} not found at {pkg_path}')
                 continue
@@ -733,6 +764,7 @@ class CrateDestroyer():
 
         for pkg in cleaned_packages:
             print("Removed unused crate", pkg)
+
 
 def main(args):
     current_path = pathlib.Path(__file__).parent.absolute()
@@ -756,21 +788,24 @@ def main(args):
 
     # Combine license file and check for any bad licenses
     lm = LicenseManager(current_path, vendor)
-    lm.generate_license(args.skip_license_check, args.license_map,
-                        license_shorthand_file)
+    lm.generate_license(
+        args.skip_license_check, args.license_map, license_shorthand_file
+    )
 
     # Run crab audit on all packages
     crab = CrabManager(current_path, crab_dir)
     crab.verify_traits()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Vendor packages properly')
-    parser.add_argument('--skip-license-check',
-                        '-s',
-                        help='Skip the license check on a specific package',
-                        action='append')
-    parser.add_argument('--license-map', help='Write license map to this file')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Vendor packages properly")
+    parser.add_argument(
+        "--skip-license-check",
+        "-s",
+        help="Skip the license check on a specific package",
+        action="append",
+    )
+    parser.add_argument("--license-map", help="Write license map to this file")
     args = parser.parse_args()
 
     main(args)

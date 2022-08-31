@@ -22,15 +22,15 @@ WORKSPACE_FILE_HEADER = """\
 
 def main(argv: List[str]):
     logging.basicConfig(
-        format='>> %(asctime)s: %(levelname)s: %(filename)s:%(lineno)d: '
-        '%(message)s',
+        format=">> %(asctime)s: %(levelname)s: %(filename)s:%(lineno)d: "
+        "%(message)s",
         level=logging.INFO,
     )
 
     projects_dir = Path(__file__).resolve().parent
     projects = []
     for dir_path, subdirs, files in os.walk(projects_dir):
-        if 'Cargo.toml' not in files:
+        if "Cargo.toml" not in files:
             continue
 
         dir_path = Path(dir_path)
@@ -40,37 +40,36 @@ def main(argv: List[str]):
         projects.append(dir_path.relative_to(projects_dir))
 
         # It's a waste to descend into src directories.
-        if 'src' in subdirs:
-            del subdirs[subdirs.index('src')]
+        if "src" in subdirs:
+            del subdirs[subdirs.index("src")]
         else:
             # ...Though if src/ doesn't exist, Cargo will get confused.
             # Synthesize one with a nop lib.rs.
-            src = dir_path / 'src'
+            src = dir_path / "src"
             src.mkdir()
-            (src / 'lib.rs').write_bytes(b'')
-            logging.info('Synthesized src/lib.rs for %s', dir_path)
+            (src / "lib.rs").write_bytes(b"")
+            logging.info("Synthesized src/lib.rs for %s", dir_path)
 
-    assert projects, f'No projects found under {projects_dir}'
+    assert projects, f"No projects found under {projects_dir}"
     projects.sort()
 
-    logging.info('Identified %d projects', len(projects))
+    logging.info("Identified %d projects", len(projects))
 
-    workspace_toml_file = projects_dir / 'Cargo.toml'
-    with workspace_toml_file.open('w', encoding='utf-8') as f:
+    workspace_toml_file = projects_dir / "Cargo.toml"
+    with workspace_toml_file.open("w", encoding="utf-8") as f:
         f.write(WORKSPACE_FILE_HEADER)
-        # The `toml` crate writes this as a massive line,
-        # which is hard to read. Since this is simple to write, write it
-        # directly.
+        # The `toml` crate writes this as a massive line, which is hard to
+        # read. Since this is simple to write, write it directly.
         # TODO(b/242668603): find a toml crate with prettier formatting
         f.write('[workspace]\nmembers = [\n')
         for project in projects:
             project = str(project)
-            assert '"' not in project and '\\' not in project, project
+            assert '"' not in project and "\\" not in project, project
             f.write(f'    "{project}",\n')
-        f.write(']')
+        f.write("]")
 
-    logging.info('Workspace Cargo.toml successfully written.')
+    logging.info("Workspace Cargo.toml successfully written.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
