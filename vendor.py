@@ -558,7 +558,7 @@ class LicenseManager:
         header = textwrap.dedent(
             """\
             # File to describe the licenses used by this registry.
-            # Used to it's easy to automatically verify ebuilds are updated.
+            # Used so it's easy to automatically verify ebuilds are updated.
             # Each line is a license. Lines starting with # are comments.
             """
         )
