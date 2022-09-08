@@ -7,3 +7,4 @@ BSD-3
 ISC
 MIT
 MPL-2.0
+ZLIB

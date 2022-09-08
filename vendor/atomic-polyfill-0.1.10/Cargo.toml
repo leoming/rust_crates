@@ -1,0 +1,13 @@
+[package]
+edition = "2018"
+name = "atomic-polyfill"
+version = "0.1.10"
+authors = [ "Dario Nieuwenhuis <dirbaio@dirbaio.net>",]
+description = "Empty crate that should not build."
+readme = "README.md"
+categories = [ "embedded", "no-std", "concurrency",]
+license = "Apache-2.0"
+repository = "https://github.com/embassy-rs/atomic-polyfill"
+
+[dependencies.critical-section]
+version = "0.2.7"

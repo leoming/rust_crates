@@ -1,0 +1,27 @@
+[package]
+name = "encode_unicode"
+version = "0.3.6"
+authors = [ "Torbjørn Birch Moltu <t.b.moltu@lyse.net>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/encode_unicode/"
+readme = "README.md"
+keywords = [ "unicode", "UTF-8", "UTF-16",]
+categories = [ "encoding", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/tormol/encode_unicode"
+
+[features]
+default = [ "std",]
+std = []
+
+[dependencies.ascii]
+version = ">=0.8, <2"
+optional = true
+default-features = false
+
+[dependencies.clippy]
+version = "0.*"
+optional = true
+
+[package.metadata.docs.rs]
+features = [ "ascii/std",]
