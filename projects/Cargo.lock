@@ -499,6 +499,7 @@ dependencies = [
  "downcast-rs",
  "enumn",
  "env_logger 0.9.0",
+ "euclid",
  "fnv",
  "futures",
  "futures-executor",
@@ -769,6 +770,15 @@ checksum = "b5115567ac25674e0043e472be13d14e537f37ea8aa4bdc4aef0c89add1db1ff"
 dependencies = [
  "libc",
  "str-buf",
+]
+
+[[package]]
+name = "euclid"
+version = "0.22.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b52c2ef4a78da0ba68fbe1fd920627411096d2ac478f7f4c9f3a54ba6705bade"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
