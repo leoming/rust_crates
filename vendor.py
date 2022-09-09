@@ -273,8 +273,8 @@ def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
 class LicenseManager:
     """Manage consolidating licenses for all packages."""
 
-    # These are all the licenses we support. Keys are what is seen in metadata and
-    # values are what is expected by the ebuild.
+    # These are all the licenses we support. Keys are what is seen in metadata
+    # and values are what is expected by ebuilds.
     SUPPORTED_LICENSES = {
         "0BSD": "0BSD",
         "Apache-2.0": "Apache-2.0",
@@ -554,7 +554,7 @@ class LicenseManager:
                 )
 
         sorted_licenses = sorted(has_license_types)
-        print("Add the following licenses to the ebuild:\n", sorted_licenses)
+        print("The following licenses are in use:", sorted_licenses)
         header = textwrap.dedent(
             """\
             # File to describe the licenses used by this registry.
