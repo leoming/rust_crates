@@ -283,6 +283,7 @@ class LicenseManager:
         "MIT": "MIT",
         "MPL-2.0": "MPL-2.0",
         "unicode": "unicode",
+        "Zlib": "ZLIB",
     }
 
     # Prefer to take attribution licenses in this order. All these require that
@@ -325,6 +326,9 @@ class LicenseManager:
         # our vendor directory.
         # https://gitlab.freedesktop.org/slirp/libslirp-sys/-/merge_requests/6
         "libslirp-sys": ("MIT", "LICENSE"),
+        # Upstream prefers to embed license text inside README.md:
+        "riscv": ("ISC", "README.md"),
+        "riscv-rt": ("ISC", "README.md"),
     }
 
     def __init__(self, working_dir, vendor_dir):
