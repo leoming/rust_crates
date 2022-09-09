@@ -98,3 +98,15 @@ future bazel migration potentially influences what the 'ideal' setup here is.
 The crate names in these `Cargo.toml`s aren't really relevant or used; please
 add some context that seems meaningful to your package's name, or do that to the
 conflicting package.
+
+### `vendor.py` is talking about CRAB audits
+
+Google has go/rust-crab, which is an attempt to centralize the results of
+reviewing various crates. For adding new crates, CRAB audits should ideally be
+conducted. The `crab/crab-template.toml` file should provide guidance on what to
+look for, and how to conduct a review.
+
+For crates which are migrated as part of `dev-rust/` migrations, CRAB audits
+_can_ be conducted, or we can choose to mark the to-be-reviewed crates as
+legacy. gbiv@ can help with marking crates as legacy. FIXME(b/240953811): Legacy
+crates should be minimized. Remove the above when appropriate.
