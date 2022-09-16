@@ -9,6 +9,7 @@ members = [
     "aosp/floss",
     "platform/crosvm",
     "platform/hps-firmware",
+    "platform/lego-controller",
     "platform2/chromeos-dbus-bindings",
     "platform2/cronista",
     "platform2/crosh",

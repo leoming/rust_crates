@@ -1733,6 +1733,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
+name = "lego-controller"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bindgen 0.59.1",
+ "glob",
+ "indicatif",
+ "once_cell",
+ "rusb",
+ "rustyline 9.1.2",
+ "rustyline-derive 0.6.0",
+ "shlex 1.0.0",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3059,6 +3074,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustyline-derive"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb35a55ab810b5c0fe31606fe9b47d1354e4dc519bec0a102655f78ea2b38057"
+dependencies = [
+ "quote 1.0.9",
+ "syn 1.0.69",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3797,7 +3822,7 @@ dependencies = [
  "rand 0.8.3",
  "regex",
  "rustyline 8.2.0",
- "rustyline-derive",
+ "rustyline-derive 0.4.0",
  "serde_json",
  "syn 1.0.69",
  "syslog 4.0.1",
