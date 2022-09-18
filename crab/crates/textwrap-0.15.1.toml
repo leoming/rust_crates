@@ -8,4 +8,3 @@ reasonably_maintained = true
 has_unsafe_code = false
 implements_crypto = false
 dev_dependency_only = false
-
