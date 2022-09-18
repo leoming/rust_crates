@@ -82,9 +82,9 @@ The `packages/` subdirectory contains a set of `Cargo.toml` files that roughly
 correspond to what exists in the ChromeOS tree. These exist only to provide
 dependency information with which we can create our `vendor/` directory, so
 everything is removed except for author information, dependencies, and (if
-necessary) a minimal set of features. Dependency sections outside of what would
-build for ChromeOS, like `[target.'cfg(windows)'.dependencies]`, are also
-removed.
+necessary) a minimal set of features/annotations. Dependency sections outside of
+what would build for ChromeOS, like `[target.'cfg(windows)'.dependencies]`, are
+also removed.
 
 Once your `Cargo.toml` seems correct and you're ready to test, run
 `packages/populate-workspace.py` to add it to the workspace.
@@ -92,6 +92,51 @@ Once your `Cargo.toml` seems correct and you're ready to test, run
 Admittedly, it's sort of awkward to have two `Cargo.toml`s for each first-party
 project. It may be worth trying to consolidate this in the future, though our
 future bazel migration potentially influences what the 'ideal' setup here is.
+
+### What is "a minimal set of features/annotations"?
+
+`cargo vendor` will trim the vendor directory based on the _features you
+require_ of your dependencies, but not their optionality. For instance, given:
+
+```
+[dependencies]
+tokio = { version = "1", optional = true }
+```
+
+`cargo vendor` will simply vendor `tokio` as though the `optional = true` isn't
+present. That said, it's important to note that `cargo vendor` _will_ try to
+trim optional dependencies of crates which `Cargo.toml` files depend upon. For
+instance, given:
+
+```
+[dependencies]
+tokio = { version = "1", features = [] }
+```
+
+`cargo vendor` selects a much smaller set of crates to vendor than it would if
+`features = []` were replaced with `features = ["full"]`. Hence, `Cargo.toml`s
+should be sure to either specify all of the features they require explicitly in
+a dependency's `features = []` block, or keep a crate-level `[features]` block
+which makes the set of _potential_ `features` of dependencies we use visible to
+`cargo vendor`. For example, _both_ of the following two `Cargo.toml` bodies are
+OK:
+
+```
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+```
+
+```
+[dependencies]
+tokio = { version = "1", features = [] }
+
+[features]
+tokio-full = [ "tokio/full" ]
+```
+
+*tl;dr*: if your crate has `optional` dependencies, feel free to drop the
+`optional = ` annotation. If your crate depends on features of other crates,
+please do not remove those.
 
 ### My crate's name conflicts with another first party's
 

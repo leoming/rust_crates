@@ -1,0 +1,16 @@
+[package]
+name = "uwbd"
+version = "0.0.1"
+authors = ["The Chromium OS Authors"]
+edition = "2018"
+
+[build-dependencies]
+protoc-rust = "2.24.1"
+
+[dependencies]
+dbus = "0.9.3"
+dbus-crossroads = "0.5.0"
+futures = "0.3.13"
+log = "0.4.14"
+protobuf = "2.24.1"
+syslog = "6.0.1"

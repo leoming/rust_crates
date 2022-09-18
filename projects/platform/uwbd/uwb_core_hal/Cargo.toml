@@ -1,0 +1,10 @@
+[package]
+name = "uwb_core_hal"
+version = "0.0.1"
+authors = ["The Chromium OS Authors"]
+edition = "2018"
+
+[dependencies]
+async-trait = "0.1.32"
+log = "0.4.14"
+tokio = { version = "1.14.0", features = ["sync"] }

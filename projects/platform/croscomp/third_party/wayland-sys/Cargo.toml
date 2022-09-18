@@ -1,0 +1,19 @@
+[package]
+name = "wayland-sys"
+version = "0.29.0"
+repository = "https://github.com/smithay/wayland-rs"
+documentation = "https://smithay.github.io/wayland-rs/wayland_sys/"
+authors = ["Victor Berger <victor.berger@m4x.org>"]
+description = "FFI bindings to the various libwayland-*.so libraries. You should only need this crate if you are working on custom wayland protocol extensions. Look at the crate wayland-client for usable bindings."
+license = "MIT"
+categories = ["external-ffi-bindings"]
+edition = "2018"
+readme = "README.md"
+
+[dependencies]
+libc = "0.2"
+lazy_static = "1.0.2"
+memoffset = "0.6.4"
+
+[build-dependencies]
+pkg-config = "0.3.7"

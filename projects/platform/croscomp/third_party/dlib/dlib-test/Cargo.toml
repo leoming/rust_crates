@@ -1,0 +1,8 @@
+[package]
+name = "dlib-test"
+version = "0.1.0"
+authors = ["Victor Berger <victor.berger@m4x.org>"]
+edition = "2018"
+
+[dependencies]
+lazy_static = "1.0"
