@@ -1618,7 +1618,7 @@ dependencies = [
  "riscv-rt",
  "rtt-target",
  "rusb",
- "rustyline 9.1.2",
+ "rustyline 10.0.0",
  "simple_logger",
  "spi-memory",
  "stm32g0",
@@ -2256,6 +2256,17 @@ dependencies = [
  "cfg-if",
  "libc",
  "memoffset 0.6.5",
+]
+
+[[package]]
+name = "nix"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
 ]
 
 [[package]]
@@ -3222,6 +3233,29 @@ dependencies = [
  "radix_trie",
  "scopeguard",
  "smallvec",
+ "unicode-segmentation",
+ "unicode-width",
+ "utf8parse",
+ "winapi",
+]
+
+[[package]]
+name = "rustyline"
+version = "10.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d1cd5ae51d3f7bf65d7969d579d502168ef578f289452bd8ccc91de28fda20e"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "clipboard-win",
+ "dirs-next",
+ "fd-lock 3.0.6",
+ "libc",
+ "log",
+ "memchr",
+ "nix 0.24.2",
+ "radix_trie",
+ "scopeguard",
  "unicode-segmentation",
  "unicode-width",
  "utf8parse",
