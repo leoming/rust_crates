@@ -45,4 +45,6 @@ members = [
     "platform2/vm_tools/chunnel",
     "platform2/vm_tools/chunnel/system_api",
     "platform2/vm_tools/crostini_client",
+    "third_party/prjoxide/prjoxide",
+    "third_party/prjoxide/pyprjoxide",
 ]
