@@ -7,6 +7,7 @@
 [workspace]
 members = [
     "aosp/floss",
+    "empty_crates",
     "platform/croscomp",
     "platform/croscomp/third_party/dlib",
     "platform/croscomp/third_party/dlib/dlib-test",

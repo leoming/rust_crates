@@ -1,0 +1,46 @@
+[[example]]
+name = "intrinsics"
+required-features = [ "compiler-builtins",]
+
+[package]
+name = "compiler_builtins"
+version = "0.1.80"
+authors = [ "Jorge Aparicio <japaricious@gmail.com>",]
+include = [ "/Cargo.toml", "/build.rs", "/src/*", "/examples/*", "/LICENSE.txt", "/README.md", "/compiler-rt/*", "/libm/src/math/*",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/rust-lang/compiler-builtins"
+documentation = "https://docs.rs/compiler_builtins"
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/rust-lang/compiler-builtins"
+
+[lib]
+test = false
+
+[dev-dependencies]
+
+[features]
+c = []
+compiler-builtins = []
+default = [ "compiler-builtins",]
+mangled-names = []
+mem = []
+no-asm = []
+no-lang-items = []
+public-test-deps = []
+rustc-dep-of-std = []
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[dependencies.core]
+version = "1.0.0"
+optional = true
+package = "rustc-std-workspace-core"
+
+[build-dependencies.cc]
+version = "1.0"
+optional = true

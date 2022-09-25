@@ -1,0 +1,28 @@
+# Packages that are represented in Portage's depgraph, but are ultimately
+# empty/useless crates to ChromeOS.
+#
+# FIXME(b/240953811): remove this
+
+[package]
+name = "empty_crates"
+version = "0.0.1"
+edition = "2021"
+license = "BSD-Google"
+
+# Note that all dependencies are under a config we never compile for. This
+# prompts `cargo vendor` to sync them, and `./vendor.py` to empty their contents
+# out. That way, if these are ever used, we can detect that during compilation
+# (empty crates turn into compile-time errors).
+[target.'cfg(windows)'.dependencies]
+# A lot of things depend directly on rustc-std-workspace-{core,std,alloc} as an
+# optional dependency, and they're represented in many places in Portage's
+# depgraph. Both upstream and in portage, these are empty crates around to make
+# migration tooling happy.
+rustc-std-workspace-alloc = "1"
+rustc-std-workspace-core = "1"
+rustc-std-workspace-std = "1"
+
+# compiler_builtins is a similar story: it's a `CROS_RUST_EMPTY_CRATE`, but a
+# lot of crates are marked as depending on it. We always link with compiler-rt,
+# so ...
+compiler_builtins = "0.1.2"
