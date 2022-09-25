@@ -1,12 +1,15 @@
-diff --git a/LICENCE b/LICENCE
+This license is located at the root of the repo at HEAD:
+https://raw.githubusercontent.com/wez/wezterm/main/filedescriptor/LICENSE.md
+
+diff --git a/LICENSE b/LICENSE
 new file mode 100644
-index 0000000..504df28
+index 0000000..be6d221
 --- /dev/null
-+++ b/LICENCE
++++ b/LICENSE
 @@ -0,0 +1,21 @@
 +MIT License
 +
-+Copyright (c) 2019 kneecaw (Nika Layzell)
++Copyright (c) 2018 Wez Furlong
 +
 +Permission is hereby granted, free of charge, to any person obtaining a copy
 +of this software and associated documentation files (the "Software"), to deal

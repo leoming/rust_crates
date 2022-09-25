@@ -45,6 +45,9 @@ members = [
     "platform2/vm_tools/chunnel",
     "platform2/vm_tools/chunnel/system_api",
     "platform2/vm_tools/crostini_client",
+    "third_party/flashrom/flashrom_tester",
+    "third_party/flashrom/libflashrom",
+    "third_party/flashrom/libflashrom-sys",
     "third_party/prjoxide/prjoxide",
     "third_party/prjoxide/pyprjoxide",
 ]
