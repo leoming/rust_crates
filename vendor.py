@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2021 The Chromium OS Authors. All rights reserved.
+# Copyright 2021 The ChromiumOS Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """ This script cleans up the vendor directory.
@@ -634,11 +634,12 @@ class CrabManager:
             if self._check_bad_traits(crabdata):
                 failing_crates[crabname] = "Failed bad traits check"
 
-        # If we had any failing crates, list them now
+        # If we had any failing crates, list them now, and exit with an error.
         if failing_crates:
             print("Failed CRAB audit:")
             for k, v in failing_crates.items():
-                print("  {}: {}".format(k, v))
+                print(f"  {k}: {v}")
+            raise ValueError("CRAB audit did not complete successfully.")
 
 
 def clean_features_in_place(cargo_toml):
