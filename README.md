@@ -154,18 +154,6 @@ The crate names in these `Cargo.toml`s aren't really relevant or used; please
 add some context that seems meaningful to your package's name, or do that to the
 conflicting package.
 
-### `vendor.py` is talking about CRAB audits
-
-Google has go/rust-crab, which is an attempt to centralize the results of
-reviewing various crates. For adding new crates, CRAB audits should ideally be
-conducted. The `crab/crab-template.toml` file should provide guidance on what to
-look for, and how to conduct a review.
-
-For crates which are migrated as part of `dev-rust/` migrations, CRAB audits
-_can_ be conducted, or we can choose to mark the to-be-reviewed crates as
-legacy. gbiv@ can help with marking crates as legacy. FIXME(b/240953811): Legacy
-crates should be minimized. Remove the above when appropriate.
-
 # Splitting Patches
 
 Due to the nature of `rust_crates`, patches can get massive (tens-hundreds of
@@ -213,3 +201,78 @@ you successfully split your CL.
 In order to make changes to old CLs, `git rebase -i` and/or `git commit --fixup`
 combined with `git rebase -i --autosquash` might be helpful to you. Please see
 `git`'s manual for more info.
+
+# FAQ
+
+## Why is `vendor.py` complaining about CRAB audits?
+
+Google has go/rust-crab, which is an attempt to centralize the results of
+reviewing various crates. For adding new crates, CRAB audits should ideally be
+conducted. The `crab/crab-template.toml` file should provide guidance on what to
+look for, and how to conduct a review.
+
+For crates which are migrated as part of `dev-rust/` migrations, CRAB audits
+_can_ be conducted, or we can choose to mark the to-be-reviewed crates as
+legacy. gbiv@ can help with marking crates as legacy.
+
+FIXME(b/240953811): Legacy crates should be minimized. Remove the above when
+appropriate.
+
+## How do I make my changes go live in `dev-rust/third-party-crates-src`?
+
+`dev-rust/third-party-crates-src` is a `cros_workon` package. You can either use
+`cros-workon-${BOARD} start dev-rust/third-party-crates-src` or
+`~/chromiumos/chromite/scripts/cros_uprev --force --overlay-type public
+--packages dev-rust/third-party-crates-src`. If you don't do these, `sudo emerge
+dev-rust/third-party-crates-src` will internally check out an old version of
+`rust_crates`, which will effectively discard your changes.
+
+If you choose to run `cros_uprev`, please do _not_ commit those changes.
+Annealing and the CQ will handle that for you.
+
+## Migration-specific FAQ
+
+FAQ that's only relevant while we're migrating from `dev-rust` to
+`third-party-crates-src`.
+
+FIXME(b/240953811): Remove this section and all subsections once the migration
+is done.
+
+### `third-party-crates-src` is dying because a package doesn't exist. Why?
+
+We keep an allowlist in `dev-rust/third-party-crates-src` that you'll have to
+update. Please run
+`~/chromiumos/src/third_party/chromiumos-overlay/dev-rust/third-party-crates-src/files/write_allowlisted_crate_versions.py`,
+and upload the changes that makes. Make sure to add a `Cq-Depend` from
+`rust_crates` to the CL you uploaded to `chromiumos-overlay`, and vice-versa.
+
+### How do I make my newly-added package go live ASAP?
+
+tl;dr: contact gbiv@.
+
+THe current migration strategy for `third-party-crates-src` is for it to
+iteratively replace the leaf packages of `dev-rust`. Concretely, imagine the
+following depgraph (where `A -> B` means "`A` depends on `B`"):
+
+```
+my-cool-package
+-> tokio-1.0.0
+  -> anyhow-1.0.0
+    -> libc-0.2.0
+      -> compiler_builtins-0.1.1
+```
+
+Even if `third-party-crates-src` has `tokio-1.0.0`, it won't export
+`tokio-1.0.0` until `anyhow-1.0.0` is exported, it won't export `anyhow-1.0.0`
+until  `libc-0.2.0` is exported, and it won't export `libc-0.2.0` until
+`compiler_builtins-0.1.1` is exported.
+
+This leaves-in migration is necessary to minimize the chances of us accidentally
+messing up portage `DEPEND`s, for making migration patches readable, and for
+avoiding race conditions (b/247596883#comment3).
+
+If we need to export a non-leaf crate, the crates which it depends on may also
+have to be exported. Further, all of these need to be inspected to ensure they
+won't introduce race conditions, among other things. Rather than building up a
+process and automation for this just to tear it all down in a few weeks, gbiv@
+has volunteered to do it all as folks request it. Yay. :)
