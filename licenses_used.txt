@@ -8,3 +8,4 @@ ISC
 MIT
 MPL-2.0
 ZLIB
+unicode
