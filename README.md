@@ -223,7 +223,7 @@ appropriate.
 `dev-rust/third-party-crates-src` is a `cros_workon` package. You can either use
 `cros-workon-${BOARD} start dev-rust/third-party-crates-src` or
 `~/chromiumos/chromite/scripts/cros_uprev --force --overlay-type public
---packages dev-rust/third-party-crates-src`. If you don't do these, `sudo emerge
+--packages dev-rust/third-party-crates-src`. If you don't do these, `emerge-${BOARD}
 dev-rust/third-party-crates-src` will internally check out an old version of
 `rust_crates`, which will effectively discard your changes.
 
