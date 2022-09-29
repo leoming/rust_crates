@@ -83,7 +83,7 @@ packages + run tests for your board of choice.
 
 ## Adding a first-party package
 
-The `packages/` subdirectory contains a set of `Cargo.toml` files that roughly
+The `projects/` subdirectory contains a set of `Cargo.toml` files that roughly
 correspond to what exists in the ChromeOS tree. These exist only to provide
 dependency information with which we can create our `vendor/` directory, so
 everything is removed except for author information, dependencies, and (if
@@ -92,7 +92,7 @@ what would build for ChromeOS, like `[target.'cfg(windows)'.dependencies]`, are
 also removed.
 
 Once your `Cargo.toml` seems correct and you're ready to test, run
-`packages/populate-workspace.py` to add it to the workspace.
+`projects/populate-workspace.py` to add it to the workspace.
 
 Admittedly, it's sort of awkward to have two `Cargo.toml`s for each first-party
 project. It may be worth trying to consolidate this in the future, though our
