@@ -1,0 +1,15 @@
+# Non-empty packages that we need in our depgraph in order to facilitate an easy
+# migration to third-party-rust-crates.
+#
+# FIXME(b/240953811): remove this
+
+[package]
+name = "pinned_crates"
+version = "0.0.1"
+edition = "2021"
+license = "BSD-Google"
+
+[dependencies]
+# dev-rust/png has a local patch upgrading png from 0.3.5 to 0.4.1 with the
+# no_extern_crate_alloc feature. Hold 0.4.1 here to respect this.
+miniz_oxide = { version = "0.4.1", features = ["no_extern_crate_alloc"] }
