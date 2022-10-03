@@ -123,7 +123,16 @@ def apply_single_patch(patch, workdir):
     Returns:
         True if successful. False otherwise.
     """
-    proc = subprocess.run(["patch", "-p1", "-i", patch], cwd=workdir)
+    proc = subprocess.run(
+        [
+            "patch",
+            "-p1",
+            "--no-backup-if-mismatch",
+            "-i",
+            patch,
+        ],
+        cwd=workdir,
+    )
     return proc.returncode == 0
 
 
