@@ -26,7 +26,46 @@ reviewed-by-team =
 
 # Required [boolean]: Cursory check to make sure the code is not actively doing
 # anything malicious like mining cryptocurrency or exfiltrating ~/.ssh, etc.
+# This doesn't need to be a deep audit of every line of the code. At a high
+# level, this is requesting that the importer verify:
+# - Whether the `Cargo.toml`'s dependencies seem reasonable, given the purpose
+#   of a crate (`structopt` probably shouldn't import `tokio`). If any
+#   dependency sticks out as questionable, the reviewer is expected to quickly
+#   verify what the crate is doing with said dep.
+# - Whether there is _obviously_ any significant amount of code which seems to
+#   do things wildly unrelated to the crate's purpose (`structopt` probably
+#   shouldn't have `Command::new("sudo").args(&["rm", "-rf", "/"]).status()`).
+#   Unjustified network access is also a big red flag.
+#
+# Final emphasis: this is a _cursory check_. Small crates (<1KLOC) should take
+# no more than a few minutes to glance over. You are not expected to have a deep
+# understanding of the inner-workings of this crate to set this bit.
 code_is_not_malicious =
+
+# Required [boolean]: This is just whether the crate has any unsafe blocks, or
+# implements any unsafe traits. Unsafe blocks expanded from macros do not count,
+# unless the macro with the unsafe block is defined in the crate. For example,
+# any of the following constructs should cause `has_unsafe_code` to be true:
+# ```
+# // ---
+# unsafe impl Foo for Bar {}
+# // ---
+# fn foo() { unsafe { bar() } }
+# // ---
+# macro_rules! foo {
+#   () => unsafe {{ bar(); }}
+# }
+# ```
+# TODO(b/250912123): Automate this.
+has_unsafe_code =
+
+# Required [boolean]: Whether the crate attempts to directly implement any
+# cryptographic algorithms. Reviewers are not required to know the
+# inner-workings of every crypto-like algorithm in order to audit for this;
+# skimming the crate's code to verify that it doesn't specifically call out
+# things like "// implement Whirlpool inline with a hack to improve speed on my
+# Athlon X3," is sufficient.
+implements_crypto =
 
 # Optional [int]: Code is readable, not overly complicated and of comparable
 # quality to first-party code. If the maintainer disappeared, this could be
@@ -66,9 +105,6 @@ code_is_not_malicious =
 # Optional [boolean]: Has the unsafe code been carefully reviewed for soundness?
 # This may require pinging the Unsafe Rust Crabal.
 # unsafe_code_is_sound = false
-
-# Optional [boolean]: Whether the crate implements any cryptographic algorithms.
-# implements_crypto = false
 
 # Optional [boolean]: Whether or not this crate is appropriate for deployment.
 # An example of something that might not be appropriate would be a code

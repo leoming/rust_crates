@@ -206,17 +206,7 @@ combined with `git rebase -i --autosquash` might be helpful to you. Please see
 
 ## Why is `vendor.py` complaining about CRAB audits?
 
-Google has go/rust-crab, which is an attempt to centralize the results of
-reviewing various crates. For adding new crates, CRAB audits should ideally be
-conducted. The `crab/crab-template.toml` file should provide guidance on what to
-look for, and how to conduct a review.
-
-For crates which are migrated as part of `dev-rust/` migrations, CRAB audits
-_can_ be conducted, or we can choose to mark the to-be-reviewed crates as
-legacy. gbiv@ can help with marking crates as legacy.
-
-FIXME(b/240953811): Legacy crates should be minimized. Remove the above when
-appropriate.
+Please see [the CRAB readme](crab/README.md).
 
 ## How do I make my changes go live in `dev-rust/third-party-crates-src`?
 
