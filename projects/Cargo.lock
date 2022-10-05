@@ -574,6 +574,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_conf"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56039deda04adbf9af4e5595c199572dc276f4fe60b03a4c84c0186d4de649d8"
+dependencies = [
+ "anyhow",
+ "clap 2.33.3",
+ "serde",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "clap_derive"
 version = "3.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1874,6 +1887,7 @@ dependencies = [
  "spi-memory",
  "stm32g0",
  "stm32g0xx-hal",
+ "svd2rust",
  "tempfile",
  "vcell",
 ]
@@ -2084,6 +2098,12 @@ dependencies = [
  "syn 1.0.101",
  "unindent",
 ]
+
+[[package]]
+name = "inflections"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
 
 [[package]]
 name = "inotify"
@@ -3810,6 +3830,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "roxmltree"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "921904a62e410e37e215c40381b7117f830d9d89ba60ab5236170541dd25646b"
+dependencies = [
+ "xmlparser",
+]
+
+[[package]]
 name = "rtic-core"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4377,6 +4406,49 @@ dependencies = [
  "proc-macro2 1.0.44",
  "quote 1.0.9",
  "syn 1.0.101",
+]
+
+[[package]]
+name = "svd-parser"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ecdb6d32990deddc5d57736fb73603c816dfa9e828c8de750d8b2b922363e72"
+dependencies = [
+ "anyhow",
+ "roxmltree",
+ "svd-rs",
+ "thiserror",
+]
+
+[[package]]
+name = "svd-rs"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "945c7348ca71638272cc7bd586a688635700138c8c4dae2d6ca9a3cdc9ea25ee"
+dependencies = [
+ "once_cell",
+ "regex",
+ "thiserror",
+]
+
+[[package]]
+name = "svd2rust"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d41115c7a744c520968b4f31742ef9f1e8e0b0ef1e8d46c4c9153fed85056750"
+dependencies = [
+ "anyhow",
+ "cast",
+ "clap 2.33.3",
+ "clap_conf",
+ "env_logger 0.9.0",
+ "inflections",
+ "log",
+ "proc-macro2 1.0.44",
+ "quote 1.0.9",
+ "svd-parser",
+ "syn 1.0.101",
+ "thiserror",
 ]
 
 [[package]]
@@ -5390,6 +5462,12 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
+
+[[package]]
+name = "xmlparser"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 
 [[package]]
 name = "zeroize"
