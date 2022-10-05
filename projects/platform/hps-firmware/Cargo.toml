@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["The Chromium OS Authors"]
 edition = "2021"
 
+
+# hps-firmware relies on this Rust tool from one of its python scripts.
+# Import the sources.
+[build-dependencies]
+svd2rust = "0.20.0"
+
 [dependencies]
 anyhow = "1.0.38"
 bare-metal = "1.0.0"
