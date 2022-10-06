@@ -454,6 +454,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bindgen"
+version = "0.60.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "062dddbc1ba4aca46de6338e2bf87771414c335f7b2f2036e8f3e9befebf88e6"
+dependencies = [
+ "bitflags",
+ "cexpr 0.6.0",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "peeking_take_while",
+ "proc-macro2 1.0.44",
+ "quote 1.0.9",
+ "regex",
+ "rustc-hash",
+ "shlex 1.1.0",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1488,6 +1507,7 @@ dependencies = [
  "tempfile",
  "terminal_size",
  "thiserror",
+ "userfaultfd",
  "uuid",
  "winapi 0.3.9",
  "wio",
@@ -7856,6 +7876,31 @@ dependencies = [
  "idna 0.2.3",
  "matches",
  "percent-encoding 2.1.0",
+]
+
+[[package]]
+name = "userfaultfd"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fee2cdd3f8bdd0b98d7aa9ace35e7214a71888229d60c1cd1cd71b7c09c089d0"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+ "nix 0.23.1",
+ "thiserror",
+ "userfaultfd-sys",
+]
+
+[[package]]
+name = "userfaultfd-sys"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2cbcf2717fa856a7226499babbbccb07353ea2fc2b27defd38bd13b1227cc78"
+dependencies = [
+ "bindgen 0.60.1",
+ "cc",
+ "cfg-if",
 ]
 
 [[package]]
