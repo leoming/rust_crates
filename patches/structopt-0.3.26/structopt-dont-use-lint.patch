@@ -1,0 +1,16 @@
+This version of structopt used `clap/lints`, which is not present in any release
+of clap matching "~2.34.0". It is available in a later patch version of 2.33.
+Since we need 2.34, drop the feature.
+
+diff --git a/Cargo.toml b/Cargo.toml
+index 321b31e..3ac6f8d 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -51,7 +51,6 @@ color = ["clap/color"]
+ debug = ["clap/debug"]
+ default = ["clap/default"]
+ doc = ["clap/doc"]
+-lints = ["clap/lints"]
+ no_cargo = ["clap/no_cargo"]
+ paw = ["structopt-derive/paw", "paw_dep"]
+ suggestions = ["clap/suggestions"]
