@@ -322,6 +322,8 @@ class LicenseManager:
         "grpcio-compiler": "grpcio",
         "grpcio-sys": "grpcio",
         "rustyline-derive": "rustyline",
+        "uefi-macros": "uefi",
+        "uefi-services": "uefi",
     }
 
     # Map a package to a specific license and license file. Only use this if
