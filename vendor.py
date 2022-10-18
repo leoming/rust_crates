@@ -653,25 +653,47 @@ class CrabManager:
             raise ValueError("CRAB audit did not complete successfully.")
 
 
+def clean_source_related_lines_in_place(cargo_toml):
+    """Removes all [[bin]] (and similar) sections in `cargo_toml`."""
+    cargo_toml.pop("bench", None)
+    cargo_toml.pop("bin", None)
+    cargo_toml.pop("examples", None)
+    cargo_toml.pop("test", None)
+
+    lib = cargo_toml.get("lib")
+    if lib:
+        lib.pop("path", None)
+
+    package = cargo_toml.get("package")
+    if package:
+        package.pop("build", None)
+        package.pop("default-run", None)
+        package.pop("include", None)
+
+
 def clean_features_in_place(cargo_toml):
     """Removes all side-effects of features in `cargo_toml`."""
     features = cargo_toml.get("features")
     if not features:
         return
 
-    for name, value in features.items():
-        if name != "default":
-            features[name] = []
+    for name in features:
+        features[name] = []
 
 
-def remove_all_target_dependencies_in_place(cargo_toml):
+def remove_all_dependencies_in_place(cargo_toml):
     """Removes all `target.*.dependencies` from `cargo_toml`."""
+    cargo_toml.pop("build-dependencies", None)
+    cargo_toml.pop("dependencies", None)
+    cargo_toml.pop("dev-dependencies", None)
+
     target = cargo_toml.get("target")
     if not target:
         return
 
     empty_keys = []
     for key, values in target.items():
+        values.pop("build-dependencies", None)
         values.pop("dependencies", None)
         values.pop("dev-dependencies", None)
         if not values:
@@ -719,7 +741,11 @@ class CrateDestroyer:
         # Cargo errors out on `[features] foo = "bar/baz"` if `bar` isn't a
         # dependency.
         clean_features_in_place(contents)
-        remove_all_target_dependencies_in_place(contents)
+        remove_all_dependencies_in_place(contents)
+
+        # Since we're removing all source files, also be sure to remove
+        # source-related keys.
+        clean_source_related_lines_in_place(contents)
 
         with open(os.path.join(pkg_path, "Cargo.toml"), "w") as cargo:
             toml.dump(contents, cargo)
