@@ -13,3 +13,13 @@ license = "BSD-Google"
 # dev-rust/png has a local patch upgrading png from 0.3.5 to 0.4.1 with the
 # no_extern_crate_alloc feature. Hold 0.4.1 here to respect this.
 miniz_oxide = { version = "0.4.1", features = ["no_extern_crate_alloc"] }
+
+# These are all older versions of upgrades which Cargo picked. Sometimes,
+# packages require very specific versions of crates. Other times, the
+# dependencies of semver-compatible packages might not match up with what `cargo
+# vendor` picks. For instance, we have a clap 2.33 ebuild w/ transitive
+# dependencies, but one empty-crates project requires clap ^2.34. Since we
+# haven't migrated clap 2.33's ebuild yet, it's easiest to pin clap to 2.33
+# here, while letting clap 2.34 be depended on by the _actual_ projects.
+clap = "~2.33"
+const_fn = "0.4"
