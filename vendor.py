@@ -22,6 +22,15 @@ import toml
 # to only this platform
 DEFAULT_PLATFORM_FILTER = "x86_64-unknown-linux-gnu"
 
+# A series of crates which are to be made empty by having no (non-comment)
+# contents in their `lib.rs`, rather than by inserting a compilation error.
+NOP_EMPTY_CRATES = frozenset({"windows"})
+
+EMPTY_CRATE_BODY = """\
+compile_error!("This crate cannot be built for this configuration.");
+"""
+NOP_EMPTY_CRATE_BODY = "// " + EMPTY_CRATE_BODY
+
 
 def _rerun_checksums(package_path):
     """Re-run checksums for given package.
@@ -707,8 +716,6 @@ def remove_all_dependencies_in_place(cargo_toml):
 
 
 class CrateDestroyer:
-    LIB_RS_BODY = """compile_error!("This crate cannot be built for this configuration.");\n"""
-
     def __init__(self, working_dir, vendor_dir):
         self.working_dir = working_dir
         self.vendor_dir = vendor_dir
@@ -750,7 +757,7 @@ class CrateDestroyer:
         with open(os.path.join(pkg_path, "Cargo.toml"), "w") as cargo:
             toml.dump(contents, cargo)
 
-    def _replace_source_contents(self, package_path):
+    def _replace_source_contents(self, package_path, compile_error):
         # First load the checksum file before starting
         checksum_file = os.path.join(package_path, ".cargo-checksum.json")
         with open(checksum_file, "r") as csum:
@@ -766,7 +773,9 @@ class CrateDestroyer:
         # Make package and src dirs and replace lib.rs
         os.makedirs(os.path.join(package_path, "src"), exist_ok=True)
         with open(os.path.join(package_path, "src", "lib.rs"), "w") as librs:
-            librs.write(self.LIB_RS_BODY)
+            librs.write(
+                EMPTY_CRATE_BODY if compile_error else NOP_EMPTY_CRATE_BODY
+            )
 
         # Restore cargo.toml
         with open(cargo_file, "wb") as cfile:
@@ -787,19 +796,22 @@ class CrateDestroyer:
         # duplication.
         for package in metadata["packages"]:
             # Skip used packages
-            if package["name"] in used_packages:
+            package_name = package["name"]
+            if package_name in used_packages:
                 continue
 
             # Detect the correct package path to destroy
             pkg_path = os.path.join(
                 self.vendor_dir,
-                "{}-{}".format(package["name"], package["version"]),
+                "{}-{}".format(package_name, package["version"]),
             )
             if not os.path.isdir(pkg_path):
-                print(f'Crate {package["name"]} not found at {pkg_path}')
+                print(f"Crate {package_name} not found at {pkg_path}")
                 continue
 
-            self._replace_source_contents(pkg_path)
+            self._replace_source_contents(
+                pkg_path, compile_error=package_name not in NOP_EMPTY_CRATES
+            )
             self._modify_cargo_toml(pkg_path)
             _rerun_checksums(pkg_path)
             cleaned_packages.append(package["name"])
