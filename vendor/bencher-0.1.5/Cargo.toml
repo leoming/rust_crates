@@ -1,0 +1,17 @@
+[package]
+name = "bencher"
+version = "0.1.5"
+authors = [ "bluss", "The Rust Project Developers",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/bencher/"
+keywords = [ "benchmark",]
+categories = [ "development-tools::profiling", "rust-patterns",]
+license = "Apache-2.0"
+repository = "https://github.com/bluss/bencher/"
+
+[lib]
+name = "bencher"
+bench = false
+
+[package.metadata.release]
+no-dev-version = true

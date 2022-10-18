@@ -3,7 +3,6 @@ edition = "2018"
 name = "clipboard-win"
 version = "4.2.1"
 authors = [ "Douman <douman@gmx.se>",]
-include = [ "**/*.rs", "Cargo.toml", "README.md",]
 description = "Empty crate that should not build."
 documentation = "https://docs.rs/crate/clipboard-win"
 readme = "README.md"

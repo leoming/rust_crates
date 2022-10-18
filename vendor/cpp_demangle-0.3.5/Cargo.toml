@@ -1,0 +1,28 @@
+[package]
+name = "cpp_demangle"
+version = "0.3.5"
+authors = [ "Nick Fitzgerald <fitzgen@gmail.com>", "Jim Blandy <jimb@red-bean.com>",]
+exclude = [ "tests/**", "in/**",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/cpp_demangle"
+readme = "./README.md"
+keywords = [ "demangle", "symbolicate", "c-plus-plus", "itanium",]
+categories = [ "development-tools::debugging", "development-tools::ffi",]
+license = "Apache-2.0"
+repository = "https://github.com/gimli-rs/cpp_demangle"
+
+[features]
+alloc = []
+cppfilt = []
+default = []
+fuzz = []
+logging = []
+nightly = []
+run_libiberty_tests = []
+std = []
+
+[profile.release]
+debug = true
+
+[badges.travis-ci]
+repository = "gimli-rs/cpp_demangle"

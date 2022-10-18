@@ -1,0 +1,35 @@
+[package]
+edition = "2018"
+name = "packed_simd_2"
+version = "0.3.8"
+description = "Empty crate that should not build."
+homepage = "https://github.com/rust-lang/packed_simd"
+documentation = "https://docs.rs/crate/packed_simd/"
+readme = "README.md"
+keywords = [ "simd", "vector", "portability",]
+categories = [ "hardware-support", "concurrency", "no-std", "data-structures",]
+license = "Apache-2.0"
+repository = "https://github.com/rust-lang/packed_simd"
+
+[features]
+default = []
+into_bits = []
+libcore_neon = []
+
+[badges.appveyor]
+repository = "rust-lang/packed_simd"
+
+[badges.codecov]
+repository = "rust-lang/packed_simd"
+
+[badges.is-it-maintained-issue-resolution]
+repository = "rust-lang/packed_simd"
+
+[badges.is-it-maintained-open-issues]
+repository = "rust-lang/packed_simd"
+
+[badges.maintenance]
+status = "experimental"
+
+[badges.travis-ci]
+repository = "rust-lang/packed_simd"

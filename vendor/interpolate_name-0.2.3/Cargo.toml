@@ -1,0 +1,15 @@
+[package]
+edition = "2018"
+name = "interpolate_name"
+version = "0.2.3"
+authors = [ "Luca Barbato <lu_zero@gentoo.org>",]
+description = "Empty crate that should not build."
+readme = "README.md"
+keywords = [ "proc_macro", "testing",]
+categories = [ "development-tools::testing",]
+license = "Apache-2.0"
+repository = "https://github.com/lu-zero/interpolate_name"
+
+[lib]
+test = false
+proc-macro = true

@@ -1,0 +1,12 @@
+[package]
+edition = "2018"
+name = "avif-serialize"
+version = "0.6.5"
+authors = [ "Kornel Lesiński <kornel@geekhood.net>",]
+description = "Empty crate that should not build."
+homepage = "https://lib.rs/avif-serialize"
+readme = "README.md"
+keywords = [ "avif", "heif", "bmff", "av1", "mux",]
+categories = [ "multimedia::images", "encoding",]
+license = "Apache-2.0"
+repository = "https://github.com/kornelski/avif-serialize"

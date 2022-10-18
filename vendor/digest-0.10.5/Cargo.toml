@@ -1,0 +1,26 @@
+[package]
+edition = "2018"
+name = "digest"
+version = "0.10.5"
+authors = [ "RustCrypto Developers",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/digest"
+readme = "README.md"
+keywords = [ "digest", "crypto", "hash",]
+categories = [ "cryptography", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/RustCrypto/traits"
+
+[features]
+alloc = []
+core-api = []
+default = []
+dev = []
+mac = []
+oid = []
+rand_core = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = [ "--cfg", "docsrs",]

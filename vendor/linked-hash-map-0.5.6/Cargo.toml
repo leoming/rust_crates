@@ -1,0 +1,17 @@
+[package]
+name = "linked-hash-map"
+version = "0.5.6"
+authors = [ "Stepan Koltsov <stepan.koltsov@gmail.com>", "Andrew Paseltiner <apaseltiner@gmail.com>",]
+exclude = [ ".github", "src/tests",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/contain-rs/linked-hash-map"
+documentation = "https://docs.rs/linked-hash-map"
+readme = "README.md"
+keywords = [ "data-structures",]
+license = "Apache-2.0"
+repository = "https://github.com/contain-rs/linked-hash-map"
+
+[features]
+heapsize_impl = []
+nightly = []
+serde_impl = []

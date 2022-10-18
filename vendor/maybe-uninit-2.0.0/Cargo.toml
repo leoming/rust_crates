@@ -1,0 +1,8 @@
+[package]
+name = "maybe-uninit"
+version = "2.0.0"
+authors = [ "est31 <MTest31@outlook.com>", "The Rust Project Developers",]
+description = "Empty crate that should not build."
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/est31/maybe-uninit"

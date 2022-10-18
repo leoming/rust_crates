@@ -1,0 +1,11 @@
+[package]
+edition = "2021"
+name = "dav1d"
+version = "0.6.1"
+authors = [ "Luca Barbato <lu_zero@gentoo.org>",]
+description = "Empty crate that should not build."
+readme = "README.md"
+keywords = [ "dav1d-rs", "av1",]
+license = "Apache-2.0"
+repository = "https://github.com/rust-av/dav1d-rs"
+resolver = "2"

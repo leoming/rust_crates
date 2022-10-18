@@ -1,0 +1,24 @@
+[package]
+edition = "2018"
+rust-version = "1.34"
+name = "portable-atomic"
+version = "0.3.15"
+exclude = [ "/.*", "/tools", "/target-specs",]
+description = "Empty crate that should not build."
+readme = "README.md"
+keywords = [ "atomic",]
+categories = [ "concurrency", "data-structures", "embedded", "hardware-support", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/taiki-e/portable-atomic"
+
+[features]
+default = []
+fallback = []
+float = []
+outline-atomics = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = [ "--cfg", "docsrs",]
+targets = [ "x86_64-unknown-linux-gnu",]

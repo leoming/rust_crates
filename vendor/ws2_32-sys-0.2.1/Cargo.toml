@@ -1,0 +1,13 @@
+[package]
+name = "ws2_32-sys"
+version = "0.2.1"
+authors = [ "Peter Atashian <retep998@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "https://retep998.github.io/doc/ws2_32/"
+repository = "https://github.com/retep998/winapi-rs"
+readme = "README.md"
+keywords = [ "windows", "ffi", "win32",]
+license = "Apache-2.0"
+
+[lib]
+name = "ws2_32"

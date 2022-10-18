@@ -1,0 +1,11 @@
+[package]
+name = "encoding_index_tests"
+version = "0.1.4"
+authors = [ "Kang Seonghoon <public+rust@mearie.org>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/lifthrasiir/rust-encoding"
+readme = "../../../README.md"
+license = "Apache-2.0"
+
+[lib]
+name = "encoding_index_tests"

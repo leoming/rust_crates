@@ -1,0 +1,24 @@
+[package]
+edition = "2018"
+name = "futures-enum"
+version = "0.1.17"
+authors = [ "Taiki Endo <te316e89@gmail.com>",]
+exclude = [ "/.github", "/scripts",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/futures-enum"
+readme = "README.md"
+keywords = [ "futures", "async", "future", "derive", "enum",]
+categories = [ "asynchronous", "rust-patterns",]
+license = "Apache-2.0"
+repository = "https://github.com/taiki-e/futures-enum"
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+renamed = []
+
+[package.metadata.docs.rs]
+all-features = true
+targets = [ "x86_64-unknown-linux-gnu",]

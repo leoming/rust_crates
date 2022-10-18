@@ -1,0 +1,17 @@
+[package]
+edition = "2018"
+name = "rust_hawktracer_proc_macro"
+version = "0.4.1"
+authors = [ "Alexandru <alex.ene0x11@gmail.com>",]
+description = "Empty crate that should not build."
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/AlexEne/rust_hawktracer_proc_macro"
+
+[lib]
+proc-macro = true
+
+[features]
+generate_bindings = []
+pkg_config = []
+profiling_enabled = []

@@ -1,0 +1,11 @@
+[package]
+name = "heapsize"
+version = "0.4.2"
+authors = [ "The Servo Project Developers",]
+description = "Empty crate that should not build."
+license = "Apache-2.0"
+repository = "https://github.com/servo/heapsize"
+
+[features]
+flexible-tests = []
+unstable = []

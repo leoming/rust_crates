@@ -1,0 +1,25 @@
+[package]
+edition = "2018"
+name = "sha2"
+version = "0.10.6"
+authors = [ "RustCrypto Developers",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/sha2"
+readme = "README.md"
+keywords = [ "crypto", "sha2", "hash", "digest",]
+categories = [ "cryptography", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/RustCrypto/hashes"
+
+[features]
+asm = []
+asm-aarch64 = []
+compress = []
+default = []
+force-soft = []
+oid = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = [ "--cfg", "docsrs",]

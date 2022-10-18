@@ -1,0 +1,11 @@
+[package]
+name = "darling_core"
+version = "0.10.2"
+authors = [ "Ted Driggs <ted.driggs@outlook.com>",]
+description = "Empty crate that should not build."
+license = "Apache-2.0"
+repository = "https://github.com/TedDriggs/darling"
+
+[features]
+diagnostics = []
+suggestions = []

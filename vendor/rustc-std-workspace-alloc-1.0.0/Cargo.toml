@@ -5,5 +5,3 @@ version = "1.0.0"
 authors = [ "Alex Crichton <alex@alexcrichton.com>",]
 description = "Empty crate that should not build."
 license = "Apache-2.0"
-
-[dependencies]

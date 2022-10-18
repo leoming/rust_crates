@@ -3,7 +3,6 @@ edition = "2018"
 name = "fuchsia-cprng"
 version = "0.1.1"
 authors = [ "Erick Tryzelaar <etryzelaar@google.com>",]
-include = [ "src/*.rs", "Cargo.toml", "AUTHORS", "LICENSE", "PATENTS",]
 description = "Empty crate that should not build."
 readme = "README.md"
 license-file = "LICENSE"

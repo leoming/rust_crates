@@ -1,0 +1,27 @@
+[package]
+name = "static_assertions"
+version = "0.3.4"
+authors = [ "Nikolai Vazquez",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/nvzqz/static-assertions-rs"
+documentation = "https://docs.rs/static_assertions/"
+readme = "README.md"
+keywords = [ "assert", "static", "testing",]
+categories = [ "no-std", "rust-patterns", "development-tools::testing",]
+license = "Apache-2.0"
+repository = "https://github.com/nvzqz/static-assertions-rs"
+
+[features]
+nightly = []
+
+[badges.is-it-maintained-issue-resolution]
+repository = "nvzqz/static-assertions-rs"
+
+[badges.is-it-maintained-open-issues]
+repository = "nvzqz/static-assertions-rs"
+
+[badges.maintenance]
+status = "passively-maintained"
+
+[badges.travis-ci]
+repository = "nvzqz/static-assertions-rs"

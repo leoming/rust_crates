@@ -1,0 +1,21 @@
+[package]
+edition = "2018"
+name = "smawk"
+version = "0.3.1"
+authors = [ "Martin Geisler <martin@geisler.net>",]
+exclude = [ ".github/", ".gitignore", "benches/", "examples/",]
+description = "Empty crate that should not build."
+readme = "README.md"
+keywords = [ "smawk", "matrix", "optimization", "dynamic-programming",]
+categories = [ "algorithms", "science",]
+license = "Apache-2.0"
+repository = "https://github.com/mgeisler/smawk"
+
+[badges.appveyor]
+repository = "mgeisler/smawk"
+
+[badges.codecov]
+repository = "mgeisler/smawk"
+
+[badges.travis-ci]
+repository = "mgeisler/smawk"

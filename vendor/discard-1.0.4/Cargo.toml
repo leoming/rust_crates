@@ -1,0 +1,11 @@
+[package]
+name = "discard"
+version = "1.0.4"
+authors = [ "Pauan <pcxunlimited@gmail.com>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/Pauan/rust-discard"
+readme = "README.md"
+keywords = [ "discard", "cancel", "revoke", "drop", "leak",]
+categories = [ "memory-management",]
+license = "Apache-2.0"
+repository = "https://github.com/Pauan/rust-discard"

@@ -1,0 +1,25 @@
+[package]
+name = "stdweb"
+version = "0.4.20"
+authors = [ "Jan Bujak <j@exia.io>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/koute/stdweb"
+documentation = "https://docs.rs/stdweb/*/stdweb/"
+readme = "README.md"
+keywords = [ "web", "asmjs", "webasm", "javascript",]
+categories = [ "api-bindings", "gui", "web-programming",]
+license = "Apache-2.0"
+repository = "https://github.com/koute/stdweb"
+
+[features]
+default = []
+docs-rs = []
+experimental_features_which_may_break_on_minor_version_bumps = []
+futures-support = []
+nightly = []
+web_test = []
+
+[package.metadata.docs.rs]
+all-features = false
+features = [ "serde", "serde_json", "futures-support", "docs-rs",]
+no-default-features = true

@@ -1,0 +1,49 @@
+[package]
+edition = "2018"
+name = "rav1e"
+version = "0.4.1"
+authors = [ "Thomas Daede <tdaede@xiph.org>",]
+autobins = false
+autobenches = false
+description = "Empty crate that should not build."
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/xiph/rav1e/"
+
+[lib]
+bench = false
+
+[features]
+asm = []
+bench = []
+binaries = []
+capi = []
+channel-api = []
+check_asm = []
+decode_test = []
+decode_test_dav1d = []
+default = []
+desync_finder = []
+dump_ivf = []
+dump_lookahead_data = []
+quick_test = []
+scenechange = []
+serialize = []
+signal_support = []
+tracing = []
+unstable = []
+wasm = []
+
+[profile.bench]
+incremental = true
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = "thin"
+debug = true
+incremental = true
+
+[package.metadata.docs.rs]
+no-default-features = true

@@ -1,0 +1,11 @@
+[package]
+name = "conv"
+version = "0.3.3"
+authors = [ "Daniel Keep <daniel.keep@gmail.com>",]
+description = "Empty crate that should not build."
+repository = "https://github.com/DanielKeep/rust-conv"
+documentation = "https://danielkeep.github.io/rust-conv/doc/conv/index.html"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = [ "from", "into", "conversion", "approximation",]
+exclude = [ "scripts/*", "update-docs.py",]

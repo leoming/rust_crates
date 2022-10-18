@@ -1,0 +1,19 @@
+[package]
+edition = "2018"
+name = "gumdrop_derive"
+version = "0.8.1"
+authors = [ "Murarth <murarth@gmail.com>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/murarth/gumdrop"
+documentation = "https://docs.rs/gumdrop_derive/"
+keywords = [ "args", "command-line", "flag", "getopts", "option",]
+license = "Apache-2.0"
+repository = "https://github.com/murarth/gumdrop"
+
+[lib]
+name = "gumdrop_derive"
+proc-macro = true
+
+[features]
+default = []
+default_expr = []

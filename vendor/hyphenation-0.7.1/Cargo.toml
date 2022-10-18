@@ -1,0 +1,19 @@
+[package]
+name = "hyphenation"
+version = "0.7.1"
+authors = [ "Andrew <andrew@banausia.com>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/tapeinosyne/hyphenation"
+documentation = "https://docs.rs/hyphenation"
+readme = "README.md"
+keywords = [ "text", "typesetting",]
+license = "Apache-2.0"
+repository = "https://github.com/tapeinosyne/hyphenation"
+
+[features]
+build_dictionaries = []
+embed_all = []
+nfc = []
+nfd = []
+nfkc = []
+nfkd = []

@@ -1,0 +1,16 @@
+[package]
+edition = "2018"
+name = "sha1"
+version = "0.6.1"
+authors = [ "Armin Ronacher <armin.ronacher@active-4.com>",]
+description = "Empty crate that should not build."
+keywords = [ "sha1",]
+license = "Apache-2.0"
+repository = "https://github.com/mitsuhiko/sha1-smol"
+
+[features]
+serde = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true

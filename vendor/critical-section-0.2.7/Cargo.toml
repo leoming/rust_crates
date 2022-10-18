@@ -12,12 +12,6 @@ repository = "https://github.com/embassy-rs/critical-section"
 [features]
 custom-impl = []
 
-[dependencies.bare-metal]
-version = "1.0.0"
-
-[dependencies.cfg-if]
-version = "1.0.0"
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = [ "--cfg", "docsrs",]

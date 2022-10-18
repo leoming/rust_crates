@@ -1,0 +1,22 @@
+[package]
+edition = "2018"
+name = "juniper"
+version = "0.15.10"
+authors = [ "Magnus Hallin <mhallin@fastmail.com>", "Christoph Herzog <chris@theduke.at>", "Christian Legnitto <christian@legnitto.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/juniper"
+readme = "README.md"
+keywords = [ "graphql", "server", "web", "rocket",]
+categories = [ "web-programming",]
+license = "Apache-2.0"
+repository = "https://github.com/graphql-rust/juniper"
+
+[features]
+default = []
+expose-test-schema = []
+graphql-parser-integration = []
+scalar-naivetime = []
+schema-language = []
+
+[badges.travis-ci]
+repository = "graphql-rust/juniper"

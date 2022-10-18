@@ -1,0 +1,17 @@
+[package]
+name = "custom_derive"
+version = "0.1.7"
+authors = [ "Daniel Keep <daniel.keep@gmail.com>",]
+description = "Empty crate that should not build."
+repository = "https://github.com/DanielKeep/rust-custom-derive/tree/custom_derive-master"
+documentation = "https://docs.rs/crate/custom_derive/"
+license = "Apache-2.0"
+keywords = [ "custom", "derive", "macro",]
+exclude = [ ".cargo/*", "local/*", "doc-pkg/*", "scripts/*", ".gitmodules", ".travis.yml", "update-docs.py",]
+
+[workspace]
+members = [ "enum_derive", "newtype_derive",]
+
+[features]
+default = []
+std = []

@@ -2,8 +2,6 @@
 name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 authors = [ "Peter Atashian <retep998@gmail.com>",]
-build = "build.rs"
-include = [ "src/*", "lib/*", "Cargo.toml", "build.rs",]
 description = "Empty crate that should not build."
 keywords = [ "windows",]
 license = "Apache-2.0"

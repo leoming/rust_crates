@@ -1,0 +1,12 @@
+[package]
+name = "yaml-rust"
+version = "0.3.5"
+authors = [ "Yuheng Chen <yuhengchen@sensetime.com>",]
+homepage = "http://chyh1990.github.io/yaml-rust/"
+documentation = "http://chyh1990.github.io/yaml-rust/doc/yaml_rust/"
+license = "Apache-2.0"
+description = "Empty crate that should not build."
+repository = "https://github.com/chyh1990/yaml-rust"
+
+[features]
+preserve_order = []

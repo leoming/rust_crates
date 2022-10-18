@@ -1,0 +1,22 @@
+[package]
+edition = "2018"
+name = "skim"
+version = "0.9.4"
+authors = [ "Zhang Jinzhou <lotabout@gmail.com>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/lotabout/skim"
+documentation = "https://docs.rs/skim"
+readme = "README.md"
+keywords = [ "fuzzy", "menu", "util",]
+license = "Apache-2.0"
+repository = "https://github.com/lotabout/skim"
+
+[lib]
+name = "skim"
+
+[features]
+default = []
+
+[profile.release]
+lto = true
+debug = false

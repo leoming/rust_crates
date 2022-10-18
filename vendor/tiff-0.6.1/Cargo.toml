@@ -1,0 +1,9 @@
+[package]
+edition = "2018"
+name = "tiff"
+version = "0.6.1"
+authors = [ "ccgn", "bvssvni <bvssvni@gmail.com>", "nwin", "TyOverby <ty@pre-alpha.com>", "HeroicKatora", "Calum", "CensoredUsername <cens.username@gmail.com>", "Robzz", "birktj",]
+exclude = [ "tests/images/*", "tests/fuzz_images/*",]
+description = "Empty crate that should not build."
+license = "Apache-2.0"
+repository = "https://github.com/image-rs/image-tiff"

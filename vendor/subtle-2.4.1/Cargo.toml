@@ -1,0 +1,23 @@
+[package]
+name = "subtle"
+version = "2.4.1"
+authors = [ "Isis Lovecruft <isis@patternsinthevoid.net>", "Henry de Valence <hdevalence@hdevalence.ca>",]
+exclude = [ "**/.gitignore", ".travis.yml",]
+description = "Empty crate that should not build."
+homepage = "https://dalek.rs/"
+documentation = "https://docs.rs/subtle"
+readme = "README.md"
+keywords = [ "cryptography", "crypto", "constant-time", "utilities",]
+categories = [ "cryptography", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/dalek-cryptography/subtle"
+
+[features]
+default = []
+i128 = []
+nightly = []
+std = []
+
+[badges.travis-ci]
+branch = "master"
+repository = "dalek-cryptography/subtle"

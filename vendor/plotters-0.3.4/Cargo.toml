@@ -1,0 +1,37 @@
+[package]
+edition = "2018"
+name = "plotters"
+version = "0.3.4"
+authors = [ "Hao Hou <haohou302@gmail.com>",]
+exclude = [ "doc-template", "plotters-doc-data",]
+description = "Empty crate that should not build."
+homepage = "https://plotters-rs.github.io/"
+readme = "README.md"
+keywords = [ "WebAssembly", "Visualization", "Plotting", "Drawing",]
+categories = [ "visualization", "wasm",]
+license = "Apache-2.0"
+repository = "https://github.com/plotters-rs/plotters"
+
+[features]
+all_elements = []
+all_series = []
+area_series = []
+bitmap_backend = []
+bitmap_encoder = []
+bitmap_gif = []
+boxplot = []
+candlestick = []
+datetime = []
+default = []
+deprecated_items = []
+errorbar = []
+evcxr = []
+evcxr_bitmap = []
+fontconfig-dlopen = []
+full_palette = []
+histogram = []
+line_series = []
+point_series = []
+surface_series = []
+svg_backend = []
+ttf = []

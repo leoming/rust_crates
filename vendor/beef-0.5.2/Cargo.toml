@@ -1,0 +1,24 @@
+[package]
+edition = "2018"
+name = "beef"
+version = "0.5.2"
+authors = [ "Maciej Hirsz <hello@maciej.codes>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/beef/"
+readme = "./README.md"
+keywords = [ "cow", "borrow", "str", "slice",]
+categories = [ "no-std", "memory-management",]
+license = "Apache-2.0"
+repository = "https://github.com/maciejhirsz/beef"
+
+[features]
+const_fn = []
+default = []
+impl_serde = []
+
+[profile.bench]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
+debug-assertions = false

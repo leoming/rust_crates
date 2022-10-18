@@ -9,9 +9,5 @@ license = "Apache-2.0"
 repository = "https://github.com/nagisa/rust_rdrand/"
 
 [features]
-default = [ "std",]
+default = []
 std = []
-
-[dependencies.rand_core]
-version = "0.3"
-default-features = false

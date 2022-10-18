@@ -1,0 +1,13 @@
+[package]
+edition = "2018"
+name = "mio-extras"
+version = "2.0.6"
+authors = [ "Carl Lerche <me@carllerche.com>", "David Hotham",]
+exclude = [ ".gitignore",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/mio-extras"
+readme = "README.md"
+keywords = [ "io", "async", "non-blocking",]
+categories = [ "asynchronous",]
+license = "Apache-2.0"
+repository = "https://github.com/dimbleby/mio-extras"

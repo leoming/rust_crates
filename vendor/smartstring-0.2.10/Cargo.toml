@@ -1,0 +1,27 @@
+[package]
+edition = "2021"
+rust-version = "1.56"
+name = "smartstring"
+version = "0.2.10"
+authors = [ "Bodil Stokke <bodil@bodil.org>",]
+exclude = [ "release.toml", "proptest-regressions/**",]
+description = "Empty crate that should not build."
+documentation = "http://docs.rs/smartstring"
+readme = "./README.md"
+keywords = [ "cache-local", "cpu-cache", "small-string", "sso", "inline-string",]
+categories = [ "data-structures",]
+license = "Apache-2.0"
+repository = "https://github.com/bodil/smartstring"
+resolver = "2"
+
+[features]
+default = []
+std = []
+test = []
+
+[badges.travis-ci]
+branch = "master"
+repository = "bodil/smartstring"
+
+[package.metadata.docs.rs]
+features = [ "arbitrary", "proptest", "serde",]

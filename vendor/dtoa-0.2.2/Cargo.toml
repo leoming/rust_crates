@@ -1,0 +1,8 @@
+[package]
+name = "dtoa"
+version = "0.2.2"
+authors = [ "David Tolnay <dtolnay@gmail.com>",]
+license = "Apache-2.0"
+description = "Empty crate that should not build."
+repository = "https://github.com/dtolnay/dtoa"
+documentation = "https://github.com/dtolnay/dtoa"

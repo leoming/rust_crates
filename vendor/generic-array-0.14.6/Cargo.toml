@@ -1,0 +1,23 @@
+[package]
+name = "generic-array"
+version = "0.14.6"
+authors = [ "Bartłomiej Kamiński <fizyk20@gmail.com>", "Aaron Trent <novacrazy@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "http://fizyk20.github.io/generic-array/generic_array/"
+readme = "README.md"
+keywords = [ "generic", "array",]
+categories = [ "data-structures", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/fizyk20/generic-array.git"
+
+[lib]
+name = "generic_array"
+
+[features]
+more_lengths = []
+
+[badges.travis-ci]
+repository = "fizyk20/generic-array"
+
+[package.metadata.docs.rs]
+features = [ "serde", "zeroize",]

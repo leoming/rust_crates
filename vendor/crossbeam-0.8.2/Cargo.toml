@@ -1,0 +1,19 @@
+[package]
+edition = "2018"
+rust-version = "1.38"
+name = "crossbeam"
+version = "0.8.2"
+exclude = [ "/.*", "/ci", "/tools",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/crossbeam-rs/crossbeam"
+readme = "README.md"
+keywords = [ "atomic", "garbage", "non-blocking", "lock-free", "rcu",]
+categories = [ "concurrency", "memory-management", "data-structures", "no-std",]
+license = "Apache-2.0"
+repository = "https://github.com/crossbeam-rs/crossbeam"
+
+[features]
+alloc = []
+default = []
+nightly = []
+std = []

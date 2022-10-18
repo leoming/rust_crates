@@ -1,0 +1,22 @@
+[package]
+edition = "2018"
+name = "quickcheck"
+version = "1.0.3"
+authors = [ "Andrew Gallant <jamslam@gmail.com>",]
+exclude = [ "/.travis.yml", "/Makefile", "/ctags.rust", "/session.vim",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/BurntSushi/quickcheck"
+documentation = "https://docs.rs/quickcheck"
+readme = "README.md"
+keywords = [ "testing", "quickcheck", "property", "shrinking", "fuzz",]
+categories = [ "development-tools::testing",]
+license = "Apache-2.0"
+repository = "https://github.com/BurntSushi/quickcheck"
+
+[lib]
+name = "quickcheck"
+
+[features]
+default = []
+regex = []
+use_logging = []

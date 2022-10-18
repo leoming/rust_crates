@@ -3,15 +3,9 @@ edition = "2018"
 name = "str-buf"
 version = "1.0.5"
 authors = [ "Douman <douman@gmx.se>",]
-include = [ "**/*.rs", "Cargo.toml", "README.md",]
 description = "Empty crate that should not build."
 readme = "README.md"
 keywords = [ "str", "string", "static",]
 categories = [ "no-std",]
 license = "Apache-2.0"
 repository = "https://github.com/DoumanAsh/str-buf"
-
-[dependencies.serde]
-version = "1"
-optional = true
-default-features = false

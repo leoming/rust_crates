@@ -1,0 +1,13 @@
+[package]
+edition = "2018"
+name = "paw-raw"
+version = "1.0.0"
+authors = [ "The CLI Working Group",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/rust-cli/paw"
+documentation = "https://docs.rs/paw-raw"
+readme = "README.md"
+keywords = [ "paw", "parser", "cli",]
+categories = [ "command-line-interface", "command-line-utilities", "parsing",]
+license = "Apache-2.0"
+repository = "https://github.com/rust-cli/paw"

@@ -3,7 +3,6 @@ edition = "2018"
 name = "error-code"
 version = "2.3.0"
 authors = [ "Douman <douman@gmx.se>",]
-include = [ "**/*.rs", "Cargo.toml", "README.md",]
 description = "Empty crate that should not build."
 readme = "README.md"
 license = "Apache-2.0"
@@ -11,13 +10,6 @@ repository = "https://github.com/DoumanAsh/error-code"
 
 [features]
 std = []
-
-[dependencies.libc]
-version = "0.2"
-default-features = false
-
-[dependencies.str-buf]
-version = "1"
 
 [package.metadata.docs.rs]
 features = [ "std",]

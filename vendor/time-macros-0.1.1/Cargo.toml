@@ -1,0 +1,11 @@
+[package]
+edition = "2018"
+name = "time-macros"
+version = "0.1.1"
+authors = [ "Jacob Pratt <the.z.cuber@gmail.com>",]
+description = "Empty crate that should not build."
+readme = "../README.md"
+keywords = [ "date", "time", "calendar", "duration",]
+categories = [ "date-and-time",]
+license = "Apache-2.0"
+repository = "https://github.com/time-rs/time"

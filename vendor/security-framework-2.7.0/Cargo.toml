@@ -1,0 +1,44 @@
+[[example]]
+name = "client"
+
+[[example]]
+name = "find_internet_password"
+
+[[example]]
+name = "set_internet_password"
+
+[package]
+edition = "2021"
+rust-version = "1.56"
+name = "security-framework"
+version = "2.7.0"
+authors = [ "Steven Fackler <sfackler@gmail.com>", "Kornel <kornel@geekhood.net>",]
+exclude = [ "test/*",]
+description = "Empty crate that should not build."
+homepage = "https://lib.rs/crates/security_framework"
+documentation = "https://docs.rs/security_framework"
+readme = "README.md"
+keywords = [ "iOS", "TLS", "SSL", "crypto", "keychain",]
+categories = [ "os::macos-apis", "cryptography", "api-bindings",]
+license = "Apache-2.0"
+repository = "https://github.com/kornelski/rust-security-framework"
+
+[features]
+OSX_10_10 = []
+OSX_10_11 = []
+OSX_10_12 = []
+OSX_10_13 = []
+OSX_10_14 = []
+OSX_10_9 = []
+alpn = []
+default = []
+job-bless = []
+nightly = []
+serial-number-bigint = []
+session-tickets = []
+
+[badges.maintenance]
+status = "passively-maintained"
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-apple-darwin", "aarch64-apple-ios",]

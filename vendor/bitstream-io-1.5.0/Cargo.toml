@@ -1,0 +1,11 @@
+[package]
+edition = "2018"
+name = "bitstream-io"
+version = "1.5.0"
+authors = [ "Brian Langenberger <bjl@usa.net>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/tuffy/bitstream-io"
+documentation = "https://docs.rs/bitstream-io/"
+keywords = [ "bitstream", "endian", "big-endian", "little-endian", "binary",]
+license = "Apache-2.0"
+repository = "https://github.com/tuffy/bitstream-io"

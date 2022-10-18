@@ -1,0 +1,11 @@
+[package]
+edition = "2018"
+name = "const-sha1"
+version = "0.2.0"
+authors = [ "Ryan Levick <ryan.levick@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/const-sha1"
+readme = "README.md"
+keywords = [ "const", "sha1", "hash", "digest",]
+license = "Apache-2.0"
+repository = "https://github.com/rylev/const-sha1"

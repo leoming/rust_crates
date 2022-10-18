@@ -1,0 +1,32 @@
+[[example]]
+name = "lzw-compress"
+required-features = [ "std",]
+
+[[example]]
+name = "lzw-decompress"
+required-features = [ "std",]
+
+[package]
+edition = "2018"
+name = "weezl"
+version = "0.1.7"
+authors = [ "HeroicKatora <andreas.molzer@gmx.de>",]
+exclude = [ "benches/*.lzw",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/weezl"
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/image-rs/lzw.git"
+
+[lib]
+name = "weezl"
+bench = false
+
+[features]
+alloc = []
+async = []
+default = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true

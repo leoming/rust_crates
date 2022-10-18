@@ -1,0 +1,16 @@
+[package]
+name = "quickcheck_macros"
+version = "0.8.0"
+authors = [ "Andrew Gallant <jamslam@gmail.com>",]
+autotests = false
+description = "Empty crate that should not build."
+homepage = "https://github.com/BurntSushi/quickcheck"
+documentation = "http://burntsushi.net/rustdoc/quickcheck/"
+readme = "../README.md"
+keywords = [ "testing", "quickcheck", "property", "shrinking", "fuzz",]
+license = "Apache-2.0"
+repository = "https://github.com/BurntSushi/quickcheck"
+
+[lib]
+name = "quickcheck_macros"
+proc-macro = true

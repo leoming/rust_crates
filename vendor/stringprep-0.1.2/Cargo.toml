@@ -1,0 +1,9 @@
+[package]
+name = "stringprep"
+version = "0.1.2"
+authors = [ "Steven Fackler <sfackler@gmail.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/stringprep/0.1.2/stringprep"
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/sfackler/rust-stringprep"

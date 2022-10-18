@@ -1,0 +1,20 @@
+[package]
+edition = "2018"
+name = "print_bytes"
+version = "0.5.0"
+authors = [ "dylni",]
+exclude = [ ".*", "/rustfmt.toml", "/src/bin", "/tests",]
+description = "Empty crate that should not build."
+readme = "README.md"
+keywords = [ "bytes", "osstr", "path", "print", "windows",]
+categories = [ "command-line-interface", "os", "wasm",]
+license = "Apache-2.0"
+repository = "https://github.com/dylni/print_bytes"
+
+[features]
+specialization = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustc-args = [ "--cfg", "print_bytes_docs_rs",]
+rustdoc-args = [ "--cfg", "print_bytes_docs_rs",]

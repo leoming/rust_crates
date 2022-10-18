@@ -8,6 +8,3 @@ readme = "README.md"
 categories = [ "embedded", "no-std", "concurrency",]
 license = "Apache-2.0"
 repository = "https://github.com/embassy-rs/atomic-polyfill"
-
-[dependencies.critical-section]
-version = "0.2.7"

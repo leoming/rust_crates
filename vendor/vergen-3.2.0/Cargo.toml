@@ -1,0 +1,13 @@
+[package]
+edition = "2018"
+name = "vergen"
+version = "3.2.0"
+authors = [ "Jason Ozias <jason.g.ozias@gmail.com>",]
+description = "Empty crate that should not build."
+homepage = "http://github.com/rustyhorde/vergen"
+documentation = "http://docs.rs/vergen"
+readme = "README.md"
+keywords = [ "version", "generation",]
+categories = [ "build",]
+license = "Apache-2.0"
+repository = "https://github.com/rustyhorde/vergen"

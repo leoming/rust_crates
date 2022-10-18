@@ -11,16 +11,6 @@ keywords = [ "iocp", "windows", "io", "overlapped",]
 license = "Apache-2.0"
 repository = "https://github.com/yoshuawuyts/miow"
 
-[dependencies.socket2]
-version = "0.3.16"
-
-[dependencies.winapi]
-version = "0.3.3"
-features = [ "std", "fileapi", "handleapi", "ioapiset", "minwindef", "namedpipeapi", "ntdef", "synchapi", "winerror", "winsock2", "ws2def", "ws2ipdef",]
-
-[dev-dependencies.rand]
-version = "0.4"
-
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
 targets = [ "aarch64-pc-windows-msvc", "i686-pc-windows-msvc", "x86_64-pc-windows-msvc",]

@@ -1,0 +1,15 @@
+[package]
+name = "derive_builder_core"
+version = "0.9.0"
+authors = [ "Colin Kiegel <kiegel@gmx.de>", "Pascal Hertleif <killercup@gmail.com>", "Jan-Erik Rediger <janerik@fnordig.de>", "Ted Driggs <ted.driggs@outlook.com>",]
+description = "Empty crate that should not build."
+documentation = "https://docs.rs/derive_builder_core"
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/colin-kiegel/rust-derive-builder"
+
+[features]
+logging = []
+
+[badges.travis-ci]
+repository = "colin-kiegel/rust-derive-builder"

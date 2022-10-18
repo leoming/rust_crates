@@ -1,0 +1,14 @@
+[package]
+edition = "2021"
+rust-version = "1.56"
+name = "unicode-linebreak"
+version = "0.1.4"
+authors = [ "Axel Forsman <axelsfor@gmail.com>",]
+description = "Empty crate that should not build."
+homepage = "https://github.com/axelf4/unicode-linebreak"
+readme = "README.md"
+keywords = [ "unicode", "text", "layout",]
+categories = [ "internationalization",]
+license = "Apache-2.0"
+repository = "https://github.com/axelf4/unicode-linebreak"
+resolver = "2"
