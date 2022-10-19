@@ -23,3 +23,4 @@ miniz_oxide = { version = "0.4.1", features = ["no_extern_crate_alloc"] }
 # here, while letting clap 2.34 be depended on by the _actual_ projects.
 clap = "~2.33"
 const_fn = "0.4"
+static_assertions = "~1.1"

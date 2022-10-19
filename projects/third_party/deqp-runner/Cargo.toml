@@ -1,0 +1,10 @@
+# Matches media-gfx/deqp-runner
+
+[package]
+name = "deqp-runner"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[dependencies]
+deqp-runner = "=0.13.1"

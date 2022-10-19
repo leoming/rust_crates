@@ -341,11 +341,13 @@ class LicenseManager:
     # upstream the patch instead.
     STATIC_LICENSE_MAP = {
         # "package name": ( "license name", "license file relative location")
-        # Patch for adding this is upstream, but the patch application doesn't
-        # apply to `cargo metadata`. This is presumably because it can't detect
-        # our vendor directory.
+        # Patch for adding these are upstream, but the patch application
+        # doesn't apply to `cargo metadata`. This is presumably because it
+        # can't detect our vendor directory.
         # https://gitlab.freedesktop.org/slirp/libslirp-sys/-/merge_requests/6
         "libslirp-sys": ("MIT", "LICENSE"),
+        # https://gitlab.freedesktop.org/anholt/deqp-runner/-/merge_requests/48
+        "deqp-runner": ("MIT", "LICENSE"),
         # Upstream prefers to embed license text inside README.md:
         "riscv": ("ISC", "README.md"),
         "riscv-rt": ("ISC", "README.md"),
