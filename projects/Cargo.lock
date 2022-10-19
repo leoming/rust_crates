@@ -51,6 +51,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "alsa-sys"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "644d308f5822c2b39fba5a6d850f74c208bf73c61d1d2dfad62505d6960e4977"
+dependencies = [
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "android_log-sys"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1126,6 +1136,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "cras-sys"
+version = "0.1.0"
+dependencies = [
+ "alsa-sys",
+ "anyhow",
+ "async-trait",
+ "clap 3.2.22",
+ "dasp_sample",
+ "dbus 0.9.5",
+ "futures 0.3.14",
+ "getopts",
+ "hound",
+ "libc",
+ "log",
+ "proc-macro2 1.0.44",
+ "protobuf",
+ "quote 1.0.9",
+ "remain",
+ "serde 1.0.145",
+ "serde_json 1.0.85",
+ "serde_yaml",
+ "syn 1.0.101",
+ "thiserror",
+]
+
+[[package]]
 name = "crash_rust_panic"
 version = "0.1.0"
 
@@ -1572,6 +1608,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dasp_sample"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
+
+[[package]]
 name = "dav1d"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1717,6 +1759,48 @@ name = "defmt-parser"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc621c2b4f5f5635e34021c38af2ccb0c1dae38ba11ebee25258de8bb1cee9fe"
+
+[[package]]
+name = "deqp-runner"
+version = "0.1.0"
+dependencies = [
+ "deqp-runner 0.13.1",
+]
+
+[[package]]
+name = "deqp-runner"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d166822eb96b5f168ecdd0cefd5da38db23455c2feb172eba4886a6f7b59c7f"
+dependencies = [
+ "anyhow",
+ "crossbeam-utils 0.8.11",
+ "flate2",
+ "junit-report",
+ "lazy_static 1.4.0",
+ "log",
+ "rand 0.7.3",
+ "rayon 1.5.3",
+ "regex",
+ "roxmltree 0.13.1",
+ "serde 1.0.145",
+ "serde-tuple-vec-map",
+ "stderrlog",
+ "structopt",
+ "timeout-readwrite",
+ "toml 0.5.9",
+]
+
+[[package]]
+name = "derive-getters"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16dc4e2517f08ca167440ccb11023c1308ee19a4022d7b03c0e652f971171869"
+dependencies = [
+ "proc-macro2 1.0.44",
+ "quote 1.0.9",
+ "syn 1.0.101",
+]
 
 [[package]]
 name = "derive-into-owned"
@@ -2896,6 +2980,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hound"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d13cdbd5dbb29f9c88095bbdc2590c9cba0d0a1269b983fef6b2cdd7e9f4db1"
+
+[[package]]
 name = "hps-firmware"
 version = "0.1.0"
 dependencies = [
@@ -3484,6 +3574,18 @@ dependencies = [
  "proc-macro2 1.0.44",
  "quote 1.0.9",
  "syn 1.0.101",
+]
+
+[[package]]
+name = "junit-report"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4e00ad2de771fc4988af88b02cbd618c08c17920208c35c4bbfe67ccfab31eb"
+dependencies = [
+ "chrono 0.4.22",
+ "derive-getters",
+ "thiserror",
+ "xml-rs",
 ]
 
 [[package]]
@@ -4745,6 +4847,7 @@ dependencies = [
  "clap 2.33.3",
  "const_fn",
  "miniz_oxide 0.4.4",
+ "static_assertions 1.1.0",
 ]
 
 [[package]]
@@ -5765,6 +5868,15 @@ dependencies = [
 
 [[package]]
 name = "roxmltree"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbf7d7b1ea646d380d0e8153158063a6da7efe30ddbf3184042848e3f8a6f671"
+dependencies = [
+ "xmlparser",
+]
+
+[[package]]
+name = "roxmltree"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "921904a62e410e37e215c40381b7117f830d9d89ba60ab5236170541dd25646b"
@@ -6197,6 +6309,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "728eb6351430bccb993660dfffc5a72f91ccc1295abaa8ce19b27ebe4f75568b"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-tuple-vec-map"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a04d0ebe0de77d7d445bb729a895dcb0a288854b267ca85f030ce51cdc578c82"
+dependencies = [
+ "serde 1.0.145",
 ]
 
 [[package]]
@@ -6713,7 +6834,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ecdb6d32990deddc5d57736fb73603c816dfa9e828c8de750d8b2b922363e72"
 dependencies = [
  "anyhow",
- "roxmltree",
+ "roxmltree 0.14.1",
  "svd-rs",
  "thiserror",
 ]
@@ -7113,6 +7234,15 @@ dependencies = [
  "quote 1.0.9",
  "standback",
  "syn 1.0.101",
+]
+
+[[package]]
+name = "timeout-readwrite"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61e9b6279ee83562e5f8ac37bbd4ca032016616c9f5688b0d1b7775619619dce"
+dependencies = [
+ "nix 0.23.1",
 ]
 
 [[package]]
