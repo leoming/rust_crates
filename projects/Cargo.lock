@@ -1450,7 +1450,7 @@ dependencies = [
  "protobuf",
  "protoc-rust",
  "quote 1.0.9",
- "rand 0.8.3",
+ "rand 0.8.5",
  "rand_core 0.6.4",
  "remain",
  "scudo",
@@ -4915,7 +4915,7 @@ dependencies = [
  "hmac",
  "md-5",
  "memchr",
- "rand 0.8.3",
+ "rand 0.8.5",
  "sha2",
  "stringprep",
 ]
@@ -5279,7 +5279,7 @@ checksum = "588f6378e4dd99458b60ec275b4477add41ce4fa9f64dcba6f15adccb19b50d6"
 dependencies = [
  "env_logger 0.8.3",
  "log",
- "rand 0.8.3",
+ "rand 0.8.5",
 ]
 
 [[package]]
@@ -5412,14 +5412,13 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ef9e7e66b4468674bfcb0c81af8b7fa0bb154fa9f28eb840da5c447baeb8d7e"
+checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
  "rand_core 0.6.4",
- "rand_hc 0.3.1",
 ]
 
 [[package]]
@@ -5501,15 +5500,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
 dependencies = [
  "rand_core 0.5.1",
-]
-
-[[package]]
-name = "rand_hc"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
-dependencies = [
- "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -5606,7 +5596,7 @@ dependencies = [
  "num-derive",
  "num-traits 0.2.14",
  "paste 1.0.4",
- "rand 0.8.3",
+ "rand 0.8.5",
  "rand_chacha 0.3.1",
  "rayon 1.5.3",
  "regex",
@@ -7048,7 +7038,7 @@ checksum = "dac1c663cfc93810f88aed9b8941d48cabf856a1b111c29a40439018d870eb22"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "rand 0.8.3",
+ "rand 0.8.5",
  "redox_syscall 0.2.16",
  "remove_dir_all",
  "winapi 0.3.9",
@@ -7481,7 +7471,7 @@ dependencies = [
  "indexmap",
  "pin-project",
  "pin-project-lite",
- "rand 0.8.3",
+ "rand 0.8.5",
  "slab",
  "tokio",
  "tokio-util",
@@ -7888,7 +7878,7 @@ dependencies = [
  "protoc-grpcio",
  "protoc-rust",
  "quote 1.0.9",
- "rand 0.8.3",
+ "rand 0.8.5",
  "regex",
  "rustyline 8.2.0",
  "rustyline-derive 0.4.0",
