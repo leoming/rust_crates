@@ -55,4 +55,5 @@ members = [
     "third_party/flashrom/libflashrom-sys",
     "third_party/prjoxide/prjoxide",
     "third_party/prjoxide/pyprjoxide",
+    "third_party/riscv-rt-macros",
 ]
