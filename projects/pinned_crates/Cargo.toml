@@ -21,6 +21,7 @@ miniz_oxide = { version = "0.4.1", features = ["no_extern_crate_alloc"] }
 # dependencies, but one empty-crates project requires clap ^2.34. Since we
 # haven't migrated clap 2.33's ebuild yet, it's easiest to pin clap to 2.33
 # here, while letting clap 2.34 be depended on by the _actual_ projects.
+bytes = "0.5"
 clap = "~2.33"
 const_fn = "0.4"
 static_assertions = "~1.1"
