@@ -25,7 +25,6 @@ repository = "https://github.com/wangds/libbayer.git"
 
 [lib]
 name = "bayer"
-crate-type = ["rlib", "dylib"]
 test = true
 doctest = true
 doc = true
