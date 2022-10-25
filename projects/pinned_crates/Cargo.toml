@@ -26,3 +26,13 @@ clap = "~2.33"
 const_fn = "0.4"
 static_assertions = "~1.1"
 owning_ref = "0.4.1"
+clap_lex = "0.1.1"
+generic-array-012 = { package = "generic-array", version = "0.12.4" }
+generic-array-013 = { package = "generic-array", version = "0.13.3" }
+crossbeam-queue = "0.2.3"
+num-bigint = "0.3.3"
+
+# FIXME(gbiv): These are missing, but can't be added since they conflict with
+# other packages brought in.
+# hyphenation = "0.8.4"
+# bincode = "0.8"
