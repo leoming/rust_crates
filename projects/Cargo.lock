@@ -4919,6 +4919,7 @@ dependencies = [
  "miniz_oxide 0.4.4",
  "num-bigint 0.3.3",
  "owning_ref",
+ "serde_test",
  "static_assertions 1.1.0",
 ]
 
@@ -6453,6 +6454,15 @@ dependencies = [
  "indexmap",
  "itoa 1.0.3",
  "ryu",
+ "serde 1.0.145",
+]
+
+[[package]]
+name = "serde_test"
+version = "1.0.147"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "641666500e4e6fba7b91b73651a375cb53579468ab3c38389289b802797cad94"
+dependencies = [
  "serde 1.0.145",
 ]
 
