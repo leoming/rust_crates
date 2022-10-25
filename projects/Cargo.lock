@@ -4632,6 +4632,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
+name = "owning_ref"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
+dependencies = [
+ "stable_deref_trait",
+]
+
+[[package]]
 name = "p9s"
 version = "0.1.0"
 dependencies = [
@@ -4855,6 +4864,7 @@ dependencies = [
  "clap 2.33.3",
  "const_fn",
  "miniz_oxide 0.4.4",
+ "owning_ref",
  "static_assertions 1.1.0",
 ]
 
