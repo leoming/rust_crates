@@ -157,8 +157,11 @@ def apply_patch_script(script, workdir):
 def determine_vendor_crates(vendor_path):
     """Returns a map of {crate_name: [directory]} at the given vendor_path."""
     result = collections.defaultdict(list)
+    crate_version_re = re.compile(r"-\d+\.\d+\.\d+(:?[+-]|$)")
     for crate_name_plus_ver in os.listdir(vendor_path):
-        name, _ = crate_name_plus_ver.rsplit("-", 1)
+        version = crate_version_re.search(crate_name_plus_ver)
+        assert version, crate_name_plus_ver
+        name = crate_name_plus_ver[: version.start()]
         result[name].append(crate_name_plus_ver)
 
     for crate_list in result.values():
