@@ -2918,6 +2918,15 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
+dependencies = [
+ "ahash 0.7.6",
+]
+
+[[package]]
+name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
@@ -4916,6 +4925,7 @@ dependencies = [
  "crossbeam-queue 0.2.3",
  "generic-array 0.12.4",
  "generic-array 0.13.3",
+ "hashbrown 0.11.2",
  "miniz_oxide 0.4.4",
  "num-bigint 0.3.3",
  "owning_ref",
