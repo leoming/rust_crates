@@ -324,7 +324,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
  "miniz_oxide 0.5.4",
- "object",
+ "object 0.29.0",
  "rustc-demangle",
 ]
 
@@ -4597,6 +4597,16 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67ac1d3f9a1d3616fd9a60c8d74296f22406a238b6a72f5cc1e6f314df4ffbf9"
+dependencies = [
+ "flate2",
+ "memchr",
+]
+
+[[package]]
+name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21158b2c33aa6d4561f1c0a6ea283ca92bc54802a93b263e910746d679a7eb53"
@@ -4924,6 +4934,7 @@ dependencies = [
  "hashbrown 0.11.2",
  "miniz_oxide 0.4.4",
  "num-bigint 0.3.3",
+ "object 0.27.1",
  "owning_ref",
  "serde_test",
  "static_assertions 1.1.0",
