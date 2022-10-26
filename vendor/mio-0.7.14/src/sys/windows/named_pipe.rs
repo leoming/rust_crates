@@ -1,41 +1,21 @@
-use crate::{poll, Registry};
-use crate::event::Source;
-use crate::sys::windows::{Event, Overlapped};
-use winapi::um::minwinbase::OVERLAPPED_ENTRY;
-
 use std::ffi::OsStr;
-use std::fmt;
 use std::io::{self, Read, Write};
-use std::mem;
 use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-use std::slice;
-use std::sync::atomic::{AtomicUsize, AtomicBool};
 use std::sync::atomic::Ordering::{Relaxed, SeqCst};
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::{Arc, Mutex};
+use std::{fmt, mem, slice};
 
-use crate::{Interest, Token};
 use miow::iocp::{CompletionPort, CompletionStatus};
 use miow::pipe;
 use winapi::shared::winerror::{ERROR_BROKEN_PIPE, ERROR_PIPE_LISTENING};
 use winapi::um::ioapiset::CancelIoEx;
+use winapi::um::minwinbase::{OVERLAPPED, OVERLAPPED_ENTRY};
 
-/// # Safety
-///
-/// Only valid if the strict is annotated with `#[repr(C)]`. This is only used
-/// with `Overlapped` and `Inner`, which are correctly annotated.
-macro_rules! offset_of {
-    ($t:ty, $($field:ident).+) => (
-        &(*(0 as *const $t)).$($field).+ as *const _ as usize
-    )
-}
-
-macro_rules! overlapped2arc {
-    ($e:expr, $t:ty, $($field:ident).+) => ({
-        let offset = offset_of!($t, $($field).+);
-        debug_assert!(offset < mem::size_of::<$t>());
-        Arc::from_raw(($e as usize - offset) as *mut $t)
-    })
-}
+use crate::event::Source;
+use crate::sys::windows::{Event, Overlapped};
+use crate::{poll, Registry};
+use crate::{Interest, Token};
 
 /// Non-blocking windows named pipe.
 ///
@@ -83,19 +63,70 @@ pub struct NamedPipe {
     inner: Arc<Inner>,
 }
 
+/// # Notes
+///
+/// The memory layout of this structure must be fixed as the
+/// `ptr_from_*_overlapped` methods depend on it, see the `ptr_from` test.
 #[repr(C)]
 struct Inner {
-    handle: pipe::NamedPipe,
-
+    // NOTE: careful modifying the order of these three fields, the `ptr_from_*`
+    // methods depend on the layout!
     connect: Overlapped,
-    connecting: AtomicBool,
-
     read: Overlapped,
     write: Overlapped,
-
+    // END NOTE.
+    handle: pipe::NamedPipe,
+    connecting: AtomicBool,
     io: Mutex<Io>,
-
     pool: Mutex<BufferPool>,
+}
+
+impl Inner {
+    /// Converts a pointer to `Inner.connect` to a pointer to `Inner`.
+    ///
+    /// # Unsafety
+    ///
+    /// Caller must ensure `ptr` is pointing to `Inner.connect`.
+    unsafe fn ptr_from_conn_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `connect` is the first field, so the pointer are the same.
+        ptr.cast()
+    }
+
+    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.read`.
+    unsafe fn ptr_from_read_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `read` is after `connect: Overlapped`.
+        (ptr as *mut Overlapped).wrapping_sub(1) as *const Inner
+    }
+
+    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.write`.
+    unsafe fn ptr_from_write_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `read` is after `connect: Overlapped` and `read: Overlapped`.
+        (ptr as *mut Overlapped).wrapping_sub(2) as *const Inner
+    }
+}
+
+#[test]
+fn ptr_from() {
+    use std::mem::ManuallyDrop;
+    use std::ptr;
+
+    let pipe = unsafe { ManuallyDrop::new(NamedPipe::from_raw_handle(ptr::null_mut())) };
+    let inner: &Inner = &pipe.inner;
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_conn_overlapped(&inner.connect as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_conn_overlapped` incorrect"
+    );
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_read_overlapped(&inner.read as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_read_overlapped` incorrect"
+    );
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_write_overlapped(&inner.write as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_write_overlapped` incorrect"
+    );
 }
 
 struct Io {
@@ -128,9 +159,7 @@ fn would_block() -> io::Error {
 impl NamedPipe {
     /// Creates a new named pipe at the specified `addr` given a "reasonable
     /// set" of initial configuration options.
-    pub fn new<A: AsRef<OsStr>>(
-        addr: A,
-    ) -> io::Result<NamedPipe> {
+    pub fn new<A: AsRef<OsStr>>(addr: A) -> io::Result<NamedPipe> {
         let pipe = pipe::NamedPipe::new(addr)?;
         // Safety: nothing actually unsafe about this. The trait fn includes
         // `unsafe`.
@@ -226,9 +255,7 @@ impl NamedPipe {
 }
 
 impl FromRawHandle for NamedPipe {
-    unsafe fn from_raw_handle(
-        handle: RawHandle,
-    ) -> NamedPipe {
+    unsafe fn from_raw_handle(handle: RawHandle) -> NamedPipe {
         NamedPipe {
             inner: Arc::new(Inner {
                 // Safety: not really unsafe
@@ -281,9 +308,7 @@ impl<'a> Read for &'a NamedPipe {
         match mem::replace(&mut state.read, State::None) {
             // In theory not possible with `token` checked above,
             // but return would block for now.
-            State::None => {
-                Err(would_block())
-            }
+            State::None => Err(would_block()),
 
             // A read is in flight, still waiting for it to finish
             State::Pending(buf, amt) => {
@@ -324,7 +349,7 @@ impl<'a> Read for &'a NamedPipe {
 }
 
 impl<'a> Write for &'a NamedPipe {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {        
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         // Make sure there's no writes pending
         let mut io = self.inner.io.lock().unwrap();
 
@@ -334,6 +359,12 @@ impl<'a> Write for &'a NamedPipe {
 
         match io.write {
             State::None => {}
+            State::Err(_) => match mem::replace(&mut io.write, State::None) {
+                State::Err(e) => return Err(e),
+                // `io` is locked, so this branch is unreachable
+                _ => unreachable!(),
+            },
+            // any other state should be handled in `write_done`
             _ => {
                 return Err(would_block());
             }
@@ -342,17 +373,26 @@ impl<'a> Write for &'a NamedPipe {
         // Move `buf` onto the heap and fire off the write
         let mut owned_buf = self.inner.get_buffer();
         owned_buf.extend(buf);
-        Inner::schedule_write(&self.inner, owned_buf, 0, &mut io, None);
-        Ok(buf.len())
+        match Inner::maybe_schedule_write(&self.inner, owned_buf, 0, &mut io)? {
+            // Some bytes are written immediately
+            Some(n) => Ok(n),
+            // Write operation is anqueued for whole buffer
+            None => Ok(buf.len()),
+        }
     }
 
-    fn flush(&mut self) -> io::Result<()> {      
-        Ok(())  
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
     }
 }
 
 impl Source for NamedPipe {
-    fn register(&mut self, registry: &Registry, token: Token, interest: Interest) -> io::Result<()> {
+    fn register(
+        &mut self,
+        registry: &Registry,
+        token: Token,
+        interest: Interest,
+    ) -> io::Result<()> {
         let mut io = self.inner.io.lock().unwrap();
 
         io.check_association(registry, false)?;
@@ -368,7 +408,10 @@ impl Source for NamedPipe {
             io.cp = Some(poll::selector(registry).clone_port());
 
             let inner_token = NEXT_TOKEN.fetch_add(2, Relaxed) + 2;
-            poll::selector(registry).inner.cp.add_handle(inner_token, &self.inner.handle)?;
+            poll::selector(registry)
+                .inner
+                .cp
+                .add_handle(inner_token, &self.inner.handle)?;
         }
 
         io.token = Some(token);
@@ -381,7 +424,12 @@ impl Source for NamedPipe {
         Ok(())
     }
 
-    fn reregister(&mut self, registry: &Registry, token: Token, interest: Interest) -> io::Result<()> { 
+    fn reregister(
+        &mut self,
+        registry: &Registry,
+        token: Token,
+        interest: Interest,
+    ) -> io::Result<()> {
         let mut io = self.inner.io.lock().unwrap();
 
         io.check_association(registry, true)?;
@@ -491,19 +539,61 @@ impl Inner {
         }
     }
 
-    fn schedule_write(me: &Arc<Inner>, buf: Vec<u8>, pos: usize, io: &mut Io, events: Option<&mut Vec<Event>>) {
+    /// Maybe schedules overlapped write operation.
+    ///
+    /// * `None` means that overlapped operation was enqueued
+    /// * `Some(n)` means that `n` bytes was immediately written.
+    ///   Note, that `write_done` will fire anyway to clean up the state.
+    fn maybe_schedule_write(
+        me: &Arc<Inner>,
+        buf: Vec<u8>,
+        pos: usize,
+        io: &mut Io,
+    ) -> io::Result<Option<usize>> {
         // Very similar to `schedule_read` above, just done for the write half.
         let e = unsafe {
             let overlapped = me.write.as_ptr() as *mut _;
             me.handle.write_overlapped(&buf[pos..], overlapped)
         };
 
+        // See `connect` above for the rationale behind `forget`
         match e {
-            // See `connect` above for the rationale behind `forget`
-            Ok(_) => {
-                io.write = State::Pending(buf, pos);
-                mem::forget(me.clone())
+            // `n` bytes are written immediately
+            Ok(Some(n)) => {
+                io.write = State::Ok(buf, pos);
+                mem::forget(me.clone());
+                Ok(Some(n))
             }
+            // write operation is enqueued
+            Ok(None) => {
+                io.write = State::Pending(buf, pos);
+                mem::forget(me.clone());
+                Ok(None)
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    fn schedule_write(
+        me: &Arc<Inner>,
+        buf: Vec<u8>,
+        pos: usize,
+        io: &mut Io,
+        events: Option<&mut Vec<Event>>,
+    ) {
+        match Inner::maybe_schedule_write(me, buf, pos, io) {
+            Ok(Some(_)) => {
+                // immediate result will be handled in `write_done`,
+                // so we'll reinterpret the `Ok` state
+                let state = mem::replace(&mut io.write, State::None);
+                io.write = match state {
+                    State::Ok(buf, pos) => State::Pending(buf, pos),
+                    // io is locked, so this branch is unreachable
+                    _ => unreachable!(),
+                };
+                mem::forget(me.clone());
+            }
+            Ok(None) => (),
             Err(e) => {
                 io.write = State::Err(e);
                 io.notify_writable(events);
@@ -546,7 +636,7 @@ fn connect_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     // Acquire the `Arc<Inner>`. Note that we should be guaranteed that
     // the refcount is available to us due to the `mem::forget` in
     // `connect` above.
-    let me = unsafe { overlapped2arc!(status.overlapped(), Inner, connect) };
+    let me = unsafe { Arc::from_raw(Inner::ptr_from_conn_overlapped(status.overlapped())) };
 
     // Flag ourselves as no longer using the `connect` overlapped instances.
     let prev = me.connecting.swap(false, SeqCst);
@@ -572,7 +662,7 @@ fn read_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     // Acquire the `FromRawArc<Inner>`. Note that we should be guaranteed that
     // the refcount is available to us due to the `mem::forget` in
     // `schedule_read` above.
-    let me = unsafe { overlapped2arc!(status.overlapped(), Inner, read) };
+    let me = unsafe { Arc::from_raw(Inner::ptr_from_read_overlapped(status.overlapped())) };
 
     // Move from the `Pending` to `Ok` state.
     let mut io = me.io.lock().unwrap();
@@ -604,12 +694,18 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     // Acquire the `Arc<Inner>`. Note that we should be guaranteed that
     // the refcount is available to us due to the `mem::forget` in
     // `schedule_write` above.
-    let me = unsafe { overlapped2arc!(status.overlapped(), Inner, write) };
+    let me = unsafe { Arc::from_raw(Inner::ptr_from_write_overlapped(status.overlapped())) };
 
     // Make the state change out of `Pending`. If we wrote the entire buffer
     // then we're writable again and otherwise we schedule another write.
     let mut io = me.io.lock().unwrap();
     let (buf, pos) = match mem::replace(&mut io.write, State::None) {
+        // `Ok` here means, that the operation was completed immediately
+        // `bytes_transferred` is already reported to a client
+        State::Ok(..) => {
+            io.notify_writable(events);
+            return;
+        }
         State::Pending(buf, pos) => (buf, pos),
         _ => unreachable!(),
     };
@@ -638,18 +734,14 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
 impl Io {
     fn check_association(&self, registry: &Registry, required: bool) -> io::Result<()> {
         match self.cp {
-            Some(ref cp) if !poll::selector(registry).same_port(cp) => {
-                Err(io::Error::new(
-                    io::ErrorKind::AlreadyExists,
-                    "I/O source already registered with a different `Registry`"
-                ))
-            }
-            None if required => {
-                Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "I/O source not registered with `Registry`"
-                ))
-            }
+            Some(ref cp) if !poll::selector(registry).same_port(cp) => Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "I/O source already registered with a different `Registry`",
+            )),
+            None if required => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "I/O source not registered with `Registry`",
+            )),
             _ => Ok(()),
         }
     }

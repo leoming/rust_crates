@@ -1471,7 +1471,7 @@ dependencies = [
  "libudev",
  "log",
  "memoffset 0.6.5",
- "mio 0.7.7",
+ "mio 0.7.14",
  "nom 7.1.1",
  "num 0.2.1",
  "num-traits 0.2.14",
@@ -4159,9 +4159,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.7.7"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e50ae3f04d169fcc9bde0b547d1c205219b7157e07ded9c5aff03e0637cb3ed7"
+checksum = "8067b404fe97c70829f082dec8bcf4f71225d7eaea1d8645349cb76fa06205cc"
 dependencies = [
  "libc",
  "log",
