@@ -351,6 +351,8 @@ class LicenseManager:
         # Upstream prefers to embed license text inside README.md:
         "riscv": ("ISC", "README.md"),
         "riscv-rt": ("ISC", "README.md"),
+        "zerocopy": ("BSD", "LICENSE"),
+        "zerocopy-derive": ("BSD", "LICENSE"),
     }
 
     def __init__(self, working_dir, vendor_dir):
