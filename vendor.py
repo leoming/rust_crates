@@ -299,6 +299,7 @@ class LicenseManager:
     SUPPORTED_LICENSES = {
         "0BSD": "0BSD",
         "Apache-2.0": "Apache-2.0",
+        "BSD-2-Clause": "BSD-2",
         "BSD-3-Clause": "BSD-3",
         "ISC": "ISC",
         "MIT": "MIT",
@@ -343,7 +344,7 @@ class LicenseManager:
     # license in a weird way. Prefer to patch the project with a license and
     # upstream the patch instead.
     STATIC_LICENSE_MAP = {
-        # "package name": ( "license name", "license file relative location")
+        # "package name": ("license name", "license file relative location")
         # Patch for adding these are upstream, but the patch application
         # doesn't apply to `cargo metadata`. This is presumably because it
         # can't detect our vendor directory.
@@ -354,8 +355,8 @@ class LicenseManager:
         # Upstream prefers to embed license text inside README.md:
         "riscv": ("ISC", "README.md"),
         "riscv-rt": ("ISC", "README.md"),
-        "zerocopy": ("BSD", "LICENSE"),
-        "zerocopy-derive": ("BSD", "LICENSE"),
+        "zerocopy": ("BSD-2", "LICENSE"),
+        "zerocopy-derive": ("BSD-2", "LICENSE"),
     }
 
     def __init__(self, working_dir, vendor_dir):
@@ -400,7 +401,7 @@ class LicenseManager:
         """Generate single massive license file from metadata."""
         metadata = load_metadata(self.working_dir)
 
-        has_license_types = set()
+        special_unicode_license = "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
         bad_licenses = {}
 
         # Keep license map ordered so it generates a consistent license map
@@ -435,7 +436,7 @@ class LicenseManager:
             # Check if we have a static license map for this package. Use the
             # static values if we have it already set.
             if pkg_name in self.STATIC_LICENSE_MAP:
-                (license, license_file) = self.STATIC_LICENSE_MAP[pkg_name]
+                license, license_file = self.STATIC_LICENSE_MAP[pkg_name]
                 license_map[pkg_name] = {
                     "license": license,
                     "license_file": license_file,
@@ -462,7 +463,7 @@ class LicenseManager:
             # a more obscure one (unicode). This hack is specifically intended
             # for the `unicode-ident` crate, though no crate name check is
             # made, since it's OK other crates happen to have this license.
-            if license == "(MIT OR Apache-2.0) AND Unicode-DFS-2016":
+            if license == special_unicode_license:
                 has_unicode_license = True
                 # We'll check later to be sure MIT or Apache-2.0 is represented
                 # properly.
@@ -478,7 +479,6 @@ class LicenseManager:
                     "license": license,
                     "license_file": license_file,
                 }
-                has_license_types.add("unicode")
                 continue
 
             # If there are multiple licenses, they are delimited with "OR" or "/"
@@ -495,7 +495,6 @@ class LicenseManager:
             # If apache license is found, always prefer it because it simplifies
             # license attribution (we can use existing Apache notice)
             if self.APACHE_LICENSE in licenses_or:
-                has_license_types.add(self.APACHE_LICENSE)
                 license_map[pkg_name] = {"license": self.APACHE_LICENSE}
 
             # Handle single license that has at least one license file
@@ -505,7 +504,6 @@ class LicenseManager:
                     l = licenses_or[0]
                     lf = license_files[0]
 
-                    has_license_types.add(l)
                     license_map[pkg_name] = {
                         "license": l,
                         "license_file": os.path.relpath(lf, self.working_dir),
@@ -525,7 +523,6 @@ class LicenseManager:
                     for f in license_files:
                         if self._guess_license_type(f) == l:
                             license_found = True
-                            has_license_types.add(l)
                             license_map[pkg_name] = {
                                 "license": l,
                                 "license_file": os.path.relpath(
@@ -577,7 +574,11 @@ class LicenseManager:
                 "Make sure all are accounted for before continuing."
             )
 
+        has_license_types = {x["license"] for x in license_map.values()}
         if has_unicode_license:
+            # Replace this license with the actual SPDX license we plan to use.
+            has_license_types.remove(special_unicode_license)
+            has_license_types.add("unicode")
             if self.APACHE_LICENSE not in has_license_types:
                 raise ValueError(
                     "Need the apache license; currently have: "

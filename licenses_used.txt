@@ -3,6 +3,7 @@
 # Each line is a license. Lines starting with # are comments.
 0BSD
 Apache-2.0
+BSD-2
 BSD-3
 ISC
 MIT
