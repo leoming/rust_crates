@@ -1,0 +1,8 @@
+[package]
+name = "rustc-demangle-capi"
+version = "0.1.0"
+authors = ["The ChromiumOS Authors"]
+edition = "2018"
+
+[dependencies]
+rustc-demangle-capi = "0.1"
