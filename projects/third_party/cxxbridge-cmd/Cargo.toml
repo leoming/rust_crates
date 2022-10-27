@@ -1,0 +1,8 @@
+[package]
+name = "cxxbridge-cmd"
+version = "0.1.0"
+authors = ["The ChromiumOS Authors"]
+edition = "2018"
+
+[dependencies]
+cxxbridge-cmd = "1.0.42"

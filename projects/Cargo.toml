@@ -49,6 +49,7 @@ members = [
     "platform2/vm_tools/chunnel/system_api",
     "platform2/vm_tools/crostini_client",
     "third_party/adhd",
+    "third_party/cxxbridge-cmd",
     "third_party/deqp-runner",
     "third_party/flashrom/flashrom_tester",
     "third_party/flashrom/libflashrom",
