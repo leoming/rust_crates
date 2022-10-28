@@ -445,6 +445,16 @@ dependencies = [
 [[package]]
 name = "bindgen"
 version = "0.59.2"
+dependencies = [
+ "clap 2.33.3",
+ "diff",
+ "shlex 1.1.0",
+ "tempfile",
+]
+
+[[package]]
+name = "bindgen"
+version = "0.59.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
 dependencies = [
@@ -1280,7 +1290,7 @@ dependencies = [
 name = "crdyboot"
 version = "1.0.0"
 dependencies = [
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cty",
  "log",
  "printf-compat",
@@ -1748,7 +1758,7 @@ version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88e40c4c77d141a3b70113ee45a1502b9c80e24f176958d39a8361abcf30c883"
 dependencies = [
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "system-deps",
 ]
 
@@ -1967,6 +1977,12 @@ dependencies = [
  "quote 1.0.21",
  "syn 1.0.101",
 ]
+
+[[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "digest"
@@ -2462,7 +2478,7 @@ dependencies = [
 name = "featured"
 version = "0.1.0"
 dependencies = [
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "thiserror",
 ]
@@ -3139,7 +3155,7 @@ dependencies = [
  "anyhow",
  "bare-metal 1.0.0",
  "bayer",
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bitflags 1.3.2",
  "clap 3.2.22",
  "clap_derive",
@@ -3754,7 +3770,7 @@ name = "lego-controller"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.19",
  "clap 3.2.22",
  "env_logger 0.9.0",
@@ -3841,7 +3857,7 @@ dependencies = [
 name = "libflashrom-sys"
 version = "0.1.0"
 dependencies = [
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config",
 ]
 
@@ -8113,7 +8129,7 @@ dependencies = [
  "async-trait",
  "base64 0.13.0",
  "bindgen 0.57.0",
- "bindgen 0.59.2",
+ "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 1.2.1",
  "configparser",
  "cxx",
