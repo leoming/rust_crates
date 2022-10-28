@@ -34,7 +34,7 @@ required-features = ["timestamps"]
 name = "timestamps_local"
 required-features = ["timestamps"]
 [dependencies.colored]
-version = "^1.6"
+version = "2"
 optional = true
 
 [dependencies.log]
