@@ -36,7 +36,8 @@ version = "0.8.2"
 optional = true
 
 [dependencies.miniz_oxide]
-version = "0.3.5"
+version = "0.4.1"
+features = ["no_extern_crate_alloc"]
 [dev-dependencies.criterion]
 version = "0.3.1"
 
