@@ -40,6 +40,7 @@ object = "0.27.1"
 no-panic = "0.1"
 riscv-rt = "=0.8.0"
 cortex-m = "0.6"
+libdbus-sys = "0.1"
 
 # FIXME(gbiv): These are missing, but can't be added since they conflict with
 # other packages brought in.
