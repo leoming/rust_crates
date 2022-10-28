@@ -27,6 +27,7 @@ defmt = "0.2.1"
 ed25519-compact = { version = "1", default-features = false, features = ["pem", "std"] }
 embedded-hal = "0.2.6"
 embedded-hal-mock = "0.8.0"
+ftdi = "0.1.3"
 gpio-cdev = "0.5.1"
 hmac-sha256 = "0.1.6"
 image = { version = "0.23.14", default-features = false, features = ["png"] }
