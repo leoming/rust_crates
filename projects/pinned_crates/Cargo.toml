@@ -33,6 +33,9 @@ crossbeam-queue = "0.2.3"
 num-bigint = "0.3.3"
 serde_test = "1"
 hashbrown = "0.11.2"
+# b/257987535: Newer versions seemingly break crosvm. Force this to the version
+# from chromiumos-overlay for now.
+chrono = "=0.4.19"
 
 # FIXME(gbiv): These are missing, but can't be added since they conflict with
 # other packages brought in.
