@@ -21,6 +21,7 @@ futures = "0.3.13"
 glob = "0.3.0"
 grpcio = { version = "0.9", features = ["protobuf", "protobuf-codec", "openssl"] }
 grpcio-sys = { version = "0.9", features = ["openssl"] }
+hex = "0.4.3"
 inotify = "0.9"
 lazy_static = "1.4"
 log = "0.4"
