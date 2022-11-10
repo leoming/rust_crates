@@ -51,6 +51,7 @@ members = [
     "third_party/adhd",
     "third_party/bindgen",
     "third_party/cxxbridge-cmd",
+    "third_party/dbus-codegen",
     "third_party/deqp-runner",
     "third_party/flashrom/flashrom_tester",
     "third_party/flashrom/libflashrom",
