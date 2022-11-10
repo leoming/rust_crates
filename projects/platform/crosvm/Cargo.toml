@@ -20,6 +20,7 @@ chrono-04 = { package = "chrono", version = "0.4" }
 com_logger = "0.1"
 crc32fast = "1.2"
 crossbeam-utils = "0.8"
+ctrlc = "3.2"
 dbus = "0.9"
 document-features = "0.2"
 downcast-rs = "1.2"
