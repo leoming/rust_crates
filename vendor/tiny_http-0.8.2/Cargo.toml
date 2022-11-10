@@ -33,10 +33,6 @@ version = "1"
 [dependencies.log]
 version = "0.4"
 
-[dependencies.openssl]
-version = "0.10"
-optional = true
-
 [dependencies.url]
 version = "2"
 [dev-dependencies.fdlimit]
@@ -50,4 +46,3 @@ version = "0.6.0"
 
 [features]
 default = []
-ssl = ["openssl"]

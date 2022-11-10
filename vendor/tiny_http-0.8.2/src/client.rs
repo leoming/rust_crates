@@ -10,6 +10,7 @@ use std::str::FromStr;
 use common::{HTTPVersion, Method};
 use util::RefinedTcpStream;
 use util::{SequentialReader, SequentialReaderBuilder, SequentialWriterBuilder};
+use util::Stream;
 
 use Request;
 
@@ -17,7 +18,7 @@ use Request;
 /// and return Request objects.
 pub struct ClientConnection {
     // address of the client
-    remote_addr: IoResult<SocketAddr>,
+    remote_addr: SocketAddr,
 
     // sequence of Readers to the stream, so that the data is not read in
     //  the wrong order
@@ -50,11 +51,11 @@ enum ReadError {
 
 impl ClientConnection {
     /// Creates a new ClientConnection that takes ownership of the TcpStream.
-    pub fn new(
-        write_socket: RefinedTcpStream,
-        mut read_socket: RefinedTcpStream,
-    ) -> ClientConnection {
-        let remote_addr = read_socket.peer_addr();
+    pub fn new<S>(stream: S) -> ClientConnection
+        where S: Into<Stream>
+    {
+        let (mut read_socket, write_socket) = RefinedTcpStream::new(stream);
+        let remote_addr = read_socket.peer_addr().unwrap_or(SocketAddr::from(([0,0,0,0], 0)));
         let secure = read_socket.secure();
 
         let mut source = SequentialReaderBuilder::new(BufReader::with_capacity(1024, read_socket));
@@ -152,7 +153,7 @@ impl ClientConnection {
             path,
             version.clone(),
             headers,
-            *self.remote_addr.as_ref().unwrap(),
+            self.remote_addr,
             data_source,
             writer,
         )
