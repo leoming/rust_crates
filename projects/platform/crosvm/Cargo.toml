@@ -40,6 +40,7 @@ libslirp-sys = "4.2.1"
 libudev = "0.2"
 log = "0.4"
 memoffset = "0.6"
+merge = "0.1.0"
 mio = { version = "0.7", features = ["os-ext"] }
 nom = "7.1"
 num = "0.2"
