@@ -7,6 +7,7 @@
 """
 import argparse
 import collections
+import functools
 import hashlib
 import json
 import os
@@ -19,8 +20,21 @@ import toml
 
 # We only care about crates we're actually going to use and that's usually
 # limited to ones with cfg(linux). For running `cargo metadata`, limit results
-# to only this platform
-DEFAULT_PLATFORM_FILTER = "x86_64-unknown-linux-gnu"
+# to only these platforms.
+ALL_SUPPORTED_PLATFORMS = (
+    # Main targets.
+    "x86_64-cros-linux-gnu",
+    "armv7a-cros-linux-gnueabihf",
+    "aarch64-cros-linux-gnu",
+    # As far as we care, this is the same as x86_64-cros-linux-gnu.
+    # "x86_64-pc-linux-gnu",
+    # Baremetal targets.
+    "thumbv6m-none-eabi",
+    "thumbv7m-none-eabi",
+    "thumbv7em-none-eabihf",
+    "i686-unknown-uefi",
+    "x86_64-unknown-uefi",
+)
 
 # A series of crates which are to be made empty by having no (non-comment)
 # contents in their `lib.rs`, rather than by inserting a compilation error.
@@ -250,6 +264,9 @@ def run_cargo_vendor(working_dir):
         working_dir: Directory to run inside. This should be the directory where
                      Cargo.toml is kept.
     """
+    # `cargo vendor` may update dependencies (which may update metadata).
+    load_all_package_metadata.cache_clear()
+
     # Cargo will refuse to revendor into versioned directories, which leads to
     # repeated `./vendor.py` invocations trying to apply patches to
     # already-patched sources. Remove the existing vendor directory to avoid
@@ -270,7 +287,7 @@ def run_cargo_vendor(working_dir):
     subprocess.check_call(cargo_cmdline, cwd=working_dir)
 
 
-def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
+def load_single_metadata(working_dir, filter_platform):
     """Load metadata for all projects under a given directory.
 
     Args:
@@ -289,6 +306,41 @@ def load_metadata(working_dir, filter_platform=DEFAULT_PLATFORM_FILTER):
         cmd += ("--filter-platform", filter_platform)
     output = subprocess.check_output(cmd, cwd=working_dir)
     return json.loads(output)
+
+
+# Calls to this are somewhat expensive, and repeated a fair few times
+# throughout `./vendor.py`. Measuring locally, having a cache here speeds this
+# script up by 1.4x.
+@functools.lru_cache()
+def load_all_package_metadata(working_dir, platforms=ALL_SUPPORTED_PLATFORMS):
+    """Loads and merges metadata for all platforms in `platforms`.
+
+    This drops a lot of data from `cargo metadata`. Some of this metadata is
+    hard to merge, other bits of it just aren't worth keeping at the moment.
+    """
+    assert platforms, f"`platforms` should have things; has {platforms}"
+
+    found_package_ids = set()
+    results = []
+    for platform in platforms:
+        metadata = load_single_metadata(working_dir, platform)["packages"]
+        for package in metadata:
+            package_id = package["id"]
+            if package_id in found_package_ids:
+                continue
+
+            found_package_ids.add(package_id)
+            results.append(
+                {
+                    "id": package["id"],
+                    "license": package["license"],
+                    "license_file": package["license_file"],
+                    "name": package["name"],
+                    "version": package["version"],
+                }
+            )
+
+    return results
 
 
 class LicenseManager:
@@ -399,7 +451,7 @@ class LicenseManager:
         self, skip_license_check, print_map_to_file, license_shorthand_file
     ):
         """Generate single massive license file from metadata."""
-        metadata = load_metadata(self.working_dir)
+        metadata = load_all_package_metadata(self.working_dir)
 
         special_unicode_license = "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
         bad_licenses = {}
@@ -410,7 +462,7 @@ class LicenseManager:
         skip_license_check = skip_license_check or []
         has_unicode_license = False
 
-        for package in metadata["packages"]:
+        for package in metadata:
             # Skip the synthesized Cargo.toml packages that exist solely to
             # list dependencies.
             if "path+file:///" in package["id"]:
@@ -627,13 +679,13 @@ class CrabManager:
 
     def verify_traits(self):
         """Verify that all required CRAB traits for this repository are met."""
-        metadata = load_metadata(self.working_dir)
+        metadata = load_all_package_metadata(self.working_dir)
 
         failing_crates = {}
 
         # Verify all packages have a CRAB file associated with it and they meet
         # all our required traits
-        for package in metadata["packages"]:
+        for package in metadata:
             # Skip the synthesized Cargo.toml packages that exist solely to
             # list dependencies.
             if "path+file:///" in package["id"]:
@@ -794,24 +846,28 @@ class CrateDestroyer:
             json.dump(checksum_contents, csum)
 
     def destroy_unused_crates(self):
-        metadata = load_metadata(self.working_dir, filter_platform=None)
+        metadata = [
+            (x["name"], x["version"])
+            for x in load_single_metadata(
+                self.working_dir, filter_platform=None
+            )["packages"]
+        ]
         used_packages = {
-            p["name"] for p in load_metadata(self.working_dir)["packages"]
+            p["name"] for p in load_all_package_metadata(self.working_dir)
         }
 
         cleaned_packages = []
         # Since we're asking for _all_ metadata packages, we may see
         # duplication.
-        for package in metadata["packages"]:
+        for package_name, package_version in metadata:
             # Skip used packages
-            package_name = package["name"]
             if package_name in used_packages:
                 continue
 
             # Detect the correct package path to destroy
             pkg_path = os.path.join(
                 self.vendor_dir,
-                "{}-{}".format(package_name, package["version"]),
+                "{}-{}".format(package_name, package_version),
             )
             if not os.path.isdir(pkg_path):
                 print(f"Crate {package_name} not found at {pkg_path}")
@@ -822,7 +878,7 @@ class CrateDestroyer:
             )
             self._modify_cargo_toml(pkg_path)
             _rerun_checksums(pkg_path)
-            cleaned_packages.append(package["name"])
+            cleaned_packages.append(package_name)
 
         for pkg in cleaned_packages:
             print("Removed unused crate", pkg)
