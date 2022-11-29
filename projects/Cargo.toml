@@ -7,7 +7,6 @@
 [workspace]
 members = [
     "aosp/floss",
-    "empty_crates",
     "pinned_crates",
     "platform/crdyboot",
     "platform/croscomp",

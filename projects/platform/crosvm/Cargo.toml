@@ -70,4 +70,6 @@ thiserror = "1.0.20"
 userfaultfd = "0.5.0"
 uuid = { version = "0.8.2", features = ["v4", "serde"] }
 winapi = "0.3"
+windows = "0.10"
 wio = "0.2"
+wmi = "0.9"
