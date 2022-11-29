@@ -1,8 +1,0 @@
-[package]
-name = "quine-mc_cluskey"
-version = "0.2.4"
-authors = [ "Oliver Schneider <git-spam-no-reply9815368754983@oli-obk.de>",]
-description = "Empty crate that should not build."
-license = "Apache-2.0"
-repository = "https://github.com/oli-obk/quine-mc_cluskey"
-documentation = "https://oli-obk.github.io/quine-mc_cluskey"

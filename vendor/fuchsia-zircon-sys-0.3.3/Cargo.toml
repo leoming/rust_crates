@@ -1,7 +1,0 @@
-[package]
-name = "fuchsia-zircon-sys"
-version = "0.3.3"
-authors = [ "Raph Levien <raph@google.com>",]
-description = "Empty crate that should not build."
-license = "Apache-2.0"
-repository = "https://fuchsia.googlesource.com/garnet/"

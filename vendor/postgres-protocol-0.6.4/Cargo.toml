@@ -1,9 +1,0 @@
-[package]
-edition = "2018"
-name = "postgres-protocol"
-version = "0.6.4"
-authors = [ "Steven Fackler <sfackler@gmail.com>",]
-description = "Empty crate that should not build."
-readme = "../README.md"
-license = "Apache-2.0"
-repository = "https://github.com/sfackler/rust-postgres"

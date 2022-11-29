@@ -1,8 +1,0 @@
-[package]
-name = "unreachable"
-version = "1.0.0"
-authors = [ "Jonathan Reem <jonathan.reem@gmail.com>",]
-repository = "https://github.com/reem/rust-unreachable.git"
-description = "Empty crate that should not build."
-readme = "README.md"
-license = "Apache-2.0"

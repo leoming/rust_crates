@@ -1,8 +1,0 @@
-[package]
-name = "synstructure_test_traits"
-version = "0.1.0"
-authors = [ "Nika Layzell <nika@thelayzells.com>",]
-description = "Empty crate that should not build."
-license = "Apache-2.0"
-
-[lib]
