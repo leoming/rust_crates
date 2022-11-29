@@ -1,7 +1,5 @@
-# Non-empty packages that we need in our depgraph in order to facilitate an easy
-# migration to third-party-rust-crates.
-#
-# FIXME(b/240953811): remove this
+# Non-empty packages that we need in our depgraph for strange reasons documented
+# inline.
 
 [package]
 name = "pinned_crates"
@@ -14,35 +12,6 @@ license = "BSD-Google"
 # no_extern_crate_alloc feature. Hold 0.4.1 here to respect this.
 miniz_oxide = { version = "0.4.1", features = ["no_extern_crate_alloc"] }
 
-# These are all older versions of upgrades which Cargo picked. Sometimes,
-# packages require very specific versions of crates. Other times, the
-# dependencies of semver-compatible packages might not match up with what `cargo
-# vendor` picks. For instance, we have a clap 2.33 ebuild w/ transitive
-# dependencies, but one empty-crates project requires clap ^2.34. Since we
-# haven't migrated clap 2.33's ebuild yet, it's easiest to pin clap to 2.33
-# here, while letting clap 2.34 be depended on by the _actual_ projects.
-bytes = "0.5"
-clap = "~2.33"
-const_fn = "0.4"
-static_assertions = "~1.1"
-owning_ref = "0.4.1"
-clap_lex = "0.1.1"
-generic-array-012 = { package = "generic-array", version = "0.12.4" }
-generic-array-013 = { package = "generic-array", version = "0.13.3" }
-crossbeam-queue = "0.2.3"
-num-bigint = "0.3.3"
-serde_test = "1"
-hashbrown = "0.11.2"
 # b/257987535: Newer versions seemingly break crosvm. Force this to the version
 # from chromiumos-overlay for now.
 chrono = "=0.4.19"
-object = "0.27.1"
-no-panic = "0.1"
-riscv-rt = "=0.8.0"
-cortex-m = "0.6"
-libdbus-sys = "0.1"
-
-# FIXME(gbiv): These are missing, but can't be added since they conflict with
-# other packages brought in.
-# hyphenation = "0.8.4"
-# bincode = "0.8"
