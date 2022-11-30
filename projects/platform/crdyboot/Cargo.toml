@@ -9,8 +9,8 @@ cty = "0.2"
 log = "0.4"
 printf-compat = { version = "0.1", default-features = false }
 simple_logger = { version = "1.16", default-features = false }
-uefi = { version = "0.17", default-features = false, features = ["exts"] }
-uefi-services = "0.14"
+uefi = { version = "0.18", default-features = false, features = ["exts"] }
+uefi-services = "0.15"
 uguid = "1.0"
 
 [build-dependencies]
