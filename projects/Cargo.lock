@@ -1294,7 +1294,6 @@ name = "crdyboot"
 version = "1.0.0"
 dependencies = [
  "bindgen 0.60.1",
- "cty",
  "log",
  "object 0.29.0",
  "printf-compat",
