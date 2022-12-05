@@ -210,59 +210,23 @@ Please see [the CRAB readme](crab/README.md).
 
 ## How do I make my changes go live in `dev-rust/third-party-crates-src`?
 
-`dev-rust/third-party-crates-src` is a `cros_workon` package. You can either use
-`cros-workon-${BOARD} start dev-rust/third-party-crates-src` or
-`~/chromiumos/chromite/scripts/cros_uprev --force --overlay-type public
---packages dev-rust/third-party-crates-src`. If you don't do these, `emerge-${BOARD}
-dev-rust/third-party-crates-src` will internally check out an old version of
-`rust_crates`, which will effectively discard your changes.
+`dev-rust/third-party-crates-src` is a `cros_workon` package. If you'd like to
+hack on it for a board, you can use
+`cros-workon-${BOARD} start dev-rust/third-party-crates-src`. If you'd like
+changes to apply to the host, use
+`cros-workon --host start dev-rust/third-party-crates-src` instead. After
+running one of these, any `emerge`s of `dev-rust/third-party-crates-src` should
+output that the `9999` version of this package is being emerged, and your local
+changes should apply.
 
-If you choose to run `cros_uprev`, please do _not_ commit those changes.
-Annealing and the CQ will handle that for you.
-
-## Migration-specific FAQ
-
-FAQ that's only relevant while we're migrating from `dev-rust` to
-`third-party-crates-src`.
-
-FIXME(b/240953811): Remove this section and all subsections once the migration
-is done.
-
-### `third-party-crates-src` is dying because a package doesn't exist. Why?
-
-We keep an allowlist in `dev-rust/third-party-crates-src` that you'll have to
-update. Please run
-`~/chromiumos/src/third_party/chromiumos-overlay/dev-rust/third-party-crates-src/files/write_allowlisted_crate_versions.py`,
-and upload the changes that makes. Make sure to add a `Cq-Depend` from
-`rust_crates` to the CL you uploaded to `chromiumos-overlay`, and vice-versa.
-
-### How do I make my newly-added package go live ASAP?
-
-tl;dr: contact gbiv@.
-
-THe current migration strategy for `third-party-crates-src` is for it to
-iteratively replace the leaf packages of `dev-rust`. Concretely, imagine the
-following depgraph (where `A -> B` means "`A` depends on `B`"):
+As an example, for local development on dependencies for the host, the "add a
+crate and make the change live" cycle looks like:
 
 ```
-my-cool-package
--> tokio-1.0.0
-  -> anyhow-1.0.0
-    -> libc-0.2.0
-      -> compiler_builtins-0.1.1
+$ cros-workon --host start dev-rust/third-party-crates-src
+$ while ! rust_crates_does_what_i_want; do
+   $EDITOR projects/foo/Cargo.toml && \
+   ./vendor.py && \
+   sudo emerge dev-rust/third-party-crates-src
+ done
 ```
-
-Even if `third-party-crates-src` has `tokio-1.0.0`, it won't export
-`tokio-1.0.0` until `anyhow-1.0.0` is exported, it won't export `anyhow-1.0.0`
-until  `libc-0.2.0` is exported, and it won't export `libc-0.2.0` until
-`compiler_builtins-0.1.1` is exported.
-
-This leaves-in migration is necessary to minimize the chances of us accidentally
-messing up portage `DEPEND`s, for making migration patches readable, and for
-avoiding race conditions (b/247596883#comment3).
-
-If we need to export a non-leaf crate, the crates which it depends on may also
-have to be exported. Further, all of these need to be inspected to ensure they
-won't introduce race conditions, among other things. Rather than building up a
-process and automation for this just to tear it all down in a few weeks, gbiv@
-has volunteered to do it all as folks request it. Yay. :)
