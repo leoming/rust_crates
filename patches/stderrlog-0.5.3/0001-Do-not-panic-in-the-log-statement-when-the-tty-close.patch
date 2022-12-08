@@ -1,0 +1,40 @@
+From c344db7cfe83adf5e4ac40e1711df4da435ebc00 Mon Sep 17 00:00:00 2001
+From: Allen Webb <allenwebb@google.com>
+Date: Thu, 8 Dec 2022 08:53:01 -0600
+Subject: [PATCH] Do not panic in the log statement when the tty closes.
+
+Fixes: https://github.com/cardoe/stderrlog-rs/issues/53
+---
+ src/lib.rs | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/lib.rs b/src/lib.rs
+index 4a4facf..a870398 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -327,10 +327,11 @@ impl Log for StdErrLog {
+             Level::Trace => Color::Blue,
+         };
+         {
++            // A failure here indicates the stream closed. Do not panic.
+             writer
+                 .get_mut()
+                 .set_color(ColorSpec::new().set_fg(Some(color)))
+-                .expect("failed to set color");
++                .ok();
+         }
+ 
+         if self.show_module_names {
+@@ -361,7 +362,8 @@ impl Log for StdErrLog {
+         }
+         let _ = writeln!(writer, "{}", record.args());
+         {
+-            writer.get_mut().reset().expect("failed to reset the color");
++            // A failure here indicates the stream closed. Do not panic.
++            writer.get_mut().reset().ok();
+         }
+     }
+ 
+-- 
+2.39.0.rc0.267.gcb52ba06e7-goog
+
