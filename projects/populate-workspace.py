@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 The ChromiumOS Authors.
+# Copyright 2022 The ChromiumOS Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Populates the top-level Cargo.toml with all necessary workspace entries."""
@@ -61,7 +61,7 @@ def main(argv: List[str]):
         # The `toml` crate writes this as a massive line, which is hard to
         # read. Since this is simple to write, write it directly.
         # TODO(b/242668603): find a toml crate with prettier formatting
-        f.write('[workspace]\nmembers = [\n')
+        f.write("[workspace]\nmembers = [\n")
         for project in projects:
             project = str(project)
             assert '"' not in project and "\\" not in project, project

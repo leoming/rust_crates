@@ -889,7 +889,9 @@ def main(args):
     patches = os.path.join(current_path, "patches")
     vendor = os.path.join(current_path, "vendor")
     crab_dir = os.path.join(current_path, "crab", "crates")
-    license_shorthand_file = os.path.join(current_path, "licenses_used.txt")
+    license_shorthand_file = os.path.join(
+        current_path, "vendor_artifacts", "licenses_used.txt"
+    )
 
     # First, actually run cargo vendor
     run_cargo_vendor(current_path)
