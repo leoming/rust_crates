@@ -851,17 +851,19 @@ class CrateDestroyer:
             )["packages"]
         ]
         used_packages = {
-            p["name"] for p in load_all_package_metadata(self.working_dir)
+            (x["name"], x["version"])
+            for x in load_all_package_metadata(self.working_dir)
         }
 
         cleaned_packages = []
         # Since we're asking for _all_ metadata packages, we may see
         # duplication.
-        for package_name, package_version in metadata:
+        for package_desc in metadata:
             # Skip used packages
-            if package_name in used_packages:
+            if package_desc in used_packages:
                 continue
 
+            package_name, package_version = package_desc
             # Detect the correct package path to destroy
             pkg_path = os.path.join(
                 self.vendor_dir,
