@@ -593,7 +593,7 @@ dependencies = [
  "getopts",
  "libc",
  "log",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
  "remain",
  "tempfile",
@@ -865,7 +865,8 @@ dependencies = [
  "libc",
  "log",
  "proc-macro2 1.0.44",
- "protobuf",
+ "protobuf 3.2.0",
+ "protobuf-codegen 3.2.0",
  "quote 1.0.21",
  "remain",
  "serde",
@@ -1028,7 +1029,7 @@ dependencies = [
  "dbus 0.8.4",
  "getopts",
  "libc",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
 ]
 
@@ -1082,7 +1083,7 @@ dependencies = [
  "pin-utils",
  "pkg-config",
  "proc-macro2 1.0.44",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
  "quote 1.0.21",
  "rand 0.8.5",
@@ -1986,7 +1987,7 @@ dependencies = [
  "libc",
  "log",
  "parking_lot 0.11.1",
- "protobuf",
+ "protobuf 2.27.1",
 ]
 
 [[package]]
@@ -1995,7 +1996,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad76ae5de2e2d85fe8f45e072f7909e22fa9ffaf0d53b280825783720dab051c"
 dependencies = [
- "protobuf",
+ "protobuf 2.27.1",
 ]
 
 [[package]]
@@ -2103,7 +2104,7 @@ dependencies = [
  "log",
  "once_cell",
  "openssl",
- "protobuf",
+ "protobuf 2.27.1",
  "serde",
  "serde_json",
  "syslog 6.0.1",
@@ -2875,7 +2876,7 @@ dependencies = [
  "env_logger 0.9.0",
  "libc",
  "log",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
  "syslog 4.0.1",
  "tempfile",
@@ -3754,12 +3755,63 @@ dependencies = [
 ]
 
 [[package]]
+name = "protobuf"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b55bad9126f378a853655831eb7363b7b01b81d19f8cb1218861086ca4a1a61e"
+dependencies = [
+ "once_cell",
+ "protobuf-support",
+ "thiserror",
+]
+
+[[package]]
 name = "protobuf-codegen"
 version = "2.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aec1632b7c8f2e620343439a7dfd1f3c47b18906c4be58982079911482b5d707"
 dependencies = [
- "protobuf",
+ "protobuf 2.27.1",
+]
+
+[[package]]
+name = "protobuf-codegen"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0dd418ac3c91caa4032d37cb80ff0d44e2ebe637b2fb243b6234bf89cdac4901"
+dependencies = [
+ "anyhow",
+ "once_cell",
+ "protobuf 3.2.0",
+ "protobuf-parse",
+ "regex",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "protobuf-parse"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d39b14605eaa1f6a340aec7f320b34064feb26c93aec35d6a9a2272a8ddfa49"
+dependencies = [
+ "anyhow",
+ "indexmap",
+ "log",
+ "protobuf 3.2.0",
+ "protobuf-support",
+ "tempfile",
+ "thiserror",
+ "which 4.3.0",
+]
+
+[[package]]
+name = "protobuf-support"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5d4d7b8601c814cfb36bcebb79f0e61e45e1e93640cf778837833bbed05c372"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]
@@ -3780,8 +3832,8 @@ checksum = "af5d484461b7f14e103742f21014cc519f6f3711b05d50b3e86d912467a3f8b7"
 dependencies = [
  "failure",
  "grpcio-compiler",
- "protobuf",
- "protobuf-codegen",
+ "protobuf 2.27.1",
+ "protobuf-codegen 2.27.1",
  "protoc",
  "tempfile",
 ]
@@ -3792,8 +3844,8 @@ version = "2.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a9e315121c8e7e21396e940a3d27f92280a6d28e3931213bf6cbfea76c5cc94"
 dependencies = [
- "protobuf",
- "protobuf-codegen",
+ "protobuf 2.27.1",
+ "protobuf-codegen 2.27.1",
  "protoc",
  "tempfile",
 ]
@@ -5071,7 +5123,7 @@ name = "system_api"
 version = "0.24.53"
 dependencies = [
  "dbus 0.9.5",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
 ]
 
@@ -5079,7 +5131,7 @@ dependencies = [
 name = "system_api_chunnel"
 version = "0.1.0"
 dependencies = [
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
 ]
 
@@ -5665,7 +5717,7 @@ dependencies = [
  "dbus-crossroads 0.5.1",
  "futures",
  "log",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-rust",
  "syslog 6.0.1",
 ]
@@ -5727,7 +5779,7 @@ dependencies = [
  "num-traits",
  "paste 1.0.4",
  "proc-macro2 1.0.44",
- "protobuf",
+ "protobuf 2.27.1",
  "protoc-grpcio",
  "protoc-rust",
  "quote 1.0.21",
