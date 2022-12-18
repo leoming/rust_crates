@@ -386,6 +386,9 @@ class LicenseManager:
         "failure_derive": "failure",
         "grpcio-compiler": "grpcio",
         "grpcio-sys": "grpcio",
+        "protobuf-codegen": "protobuf",
+        "protobuf-parse": "protobuf",
+        "protobuf-support": "protobuf",
         "rustyline-derive": "rustyline",
     }
 
