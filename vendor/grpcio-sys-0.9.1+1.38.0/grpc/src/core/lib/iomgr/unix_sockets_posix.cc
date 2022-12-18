@@ -23,6 +23,7 @@
 
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <linux/vm_sockets.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -52,6 +53,16 @@ grpc_error_handle grpc_resolve_unix_domain_address(
   return grpc_core::UnixSockaddrPopulate(name, (*addresses)->addrs);
 }
 
+grpc_error_handle grpc_resolve_vsock_address(
+    const char* name, grpc_resolved_addresses** addresses) {
+  *addresses = static_cast<grpc_resolved_addresses*>(
+      gpr_malloc(sizeof(grpc_resolved_addresses)));
+  (*addresses)->naddrs = 1;
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
+      gpr_malloc(sizeof(grpc_resolved_address)));
+  return grpc_core::VsockaddrPopulate(name, (*addresses)->addrs);
+}
+
 grpc_error_handle grpc_resolve_unix_abstract_domain_address(
     const absl::string_view name, grpc_resolved_addresses** addresses) {
   *addresses = static_cast<grpc_resolved_addresses*>(
@@ -68,10 +79,17 @@ int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
   return addr->sa_family == AF_UNIX;
 }
 
+int grpc_is_vsock_socket(const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  return addr->sa_family == AF_VSOCK;
+}
+
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+
   if (addr->sa_family != AF_UNIX) {
     return;
   }
@@ -105,6 +123,16 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
             resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
   }
   return absl::StrCat("unix:", unix_addr->sun_path);
+}
+
+std::string grpc_sockaddr_to_vsock(const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family != AF_VSOCK) {
+    return "";
+  }
+  const auto* vsock_addr = reinterpret_cast<const struct sockaddr_vm*>(addr);
+  return absl::StrCat("vsock:", vsock_addr->svm_cid, ":", vsock_addr->svm_port);
 }
 
 #endif

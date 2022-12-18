@@ -226,7 +226,10 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   const char* scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
+  } else if (strcmp("vsock", scheme) == 0) {
+    return grpc_sockaddr_to_vsock(resolved_addr);
   }
+
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   std::string uri_str;
@@ -240,6 +243,7 @@ const char* grpc_sockaddr_get_uri_scheme(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+
   switch (addr->sa_family) {
     case GRPC_AF_INET:
       return "ipv4";
@@ -247,6 +251,8 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv6";
     case GRPC_AF_UNIX:
       return "unix";
+    case GRPC_AF_VSOCK:
+      return "vsock";
   }
   return nullptr;
 }
@@ -268,7 +274,8 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       return grpc_ntohs(
           (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
     default:
-      if (grpc_is_unix_socket(resolved_addr)) {
+      if (grpc_is_unix_socket(resolved_addr) ||
+          grpc_is_vsock_socket(resolved_addr)) {
         return 1;
       }
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",

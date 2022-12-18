@@ -28,6 +28,11 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
+/** Populate \a addr and \a len from \a uri, whose path is expected to contain a
+ * vsock specification. Returns true upon success. */
+bool grpc_parse_vsock(const grpc_core::URI& uri,
+                      grpc_resolved_address* resolved_addr);
+
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
  * unix socket path. Returns true upon success. */
 bool grpc_parse_unix(const grpc_core::URI& uri,
@@ -62,6 +67,10 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
 uint16_t grpc_strhtons(const char* port);
 
 namespace grpc_core {
+
+/** Populate \a resolved_addr to be a vsock socket at |path| */
+grpc_error_handle VsockaddrPopulate(absl::string_view path,
+                                    grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,

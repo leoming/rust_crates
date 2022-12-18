@@ -36,15 +36,22 @@ void grpc_create_socketpair_if_unix(int sv[2]);
 grpc_error_handle grpc_resolve_unix_domain_address(
     const char* name, grpc_resolved_addresses** addresses);
 
+grpc_error_handle grpc_resolve_vsock_address(
+    const char* name, grpc_resolved_addresses** addresses);
+
 grpc_error_handle grpc_resolve_unix_abstract_domain_address(
     absl::string_view name, grpc_resolved_addresses** addresses);
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr);
+
+int grpc_is_vsock_socket(const grpc_resolved_address* resolved_addr);
 
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* resolved_addr);
 
 std::string grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr);
+
+std::string grpc_sockaddr_to_vsock(const grpc_resolved_address* resolved_addr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H */

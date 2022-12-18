@@ -140,6 +140,23 @@ class IPv6ResolverFactory : public ResolverFactory {
 };
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+class VsockResolverFactory : public ResolverFactory {
+ public:
+  bool IsValidUri(const URI& uri) const override {
+    return ParseUri(uri, grpc_parse_vsock, nullptr);
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_vsock);
+  }
+
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
+    return "localhost";
+  }
+
+  const char* scheme() const override { return "vsock"; }
+};
+
 class UnixResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const URI& uri) const override {
@@ -185,6 +202,8 @@ void grpc_resolver_sockaddr_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+      absl::make_unique<grpc_core::VsockResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::UnixResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(

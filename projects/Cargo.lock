@@ -908,7 +908,7 @@ version = "1.0.0"
 dependencies = [
  "bindgen 0.60.1",
  "log",
- "object 0.29.0",
+ "object",
  "printf-compat",
  "regex",
  "simple_logger",
