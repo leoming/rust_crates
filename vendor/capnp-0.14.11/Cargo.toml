@@ -12,7 +12,7 @@
 [package]
 edition = "2018"
 name = "capnp"
-version = "0.14.10"
+version = "0.14.11"
 authors = ["David Renshaw <dwrenshaw@gmail.com>"]
 description = "runtime library for Cap'n Proto data encoding"
 documentation = "https://docs.capnproto-rust.org/capnp/"
