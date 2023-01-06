@@ -10,9 +10,9 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2021"
+edition = "2018"
 name = "textwrap"
-version = "0.15.1"
+version = "0.15.2"
 authors = ["Martin Geisler <martin@geisler.net>"]
 exclude = [
     ".github/",
@@ -22,7 +22,7 @@ exclude = [
     "fuzz/",
     "images/",
 ]
-description = "Library for word wrapping, indenting, and dedenting strings. Has optional support for Unicode and emojis as well as machine hyphenation."
+description = "Powerful library for word wrapping, indenting, and dedenting strings"
 documentation = "https://docs.rs/textwrap/"
 readme = "README.md"
 keywords = [
@@ -38,7 +38,6 @@ categories = [
 ]
 license = "MIT"
 repository = "https://github.com/mgeisler/textwrap"
-resolver = "2"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -63,11 +62,6 @@ name = "indent"
 path = "benches/indent.rs"
 harness = false
 
-[[bench]]
-name = "unfill"
-path = "benches/unfill.rs"
-harness = false
-
 [dependencies.hyphenation]
 version = "0.8.4"
 features = ["embed_en-us"]
@@ -78,7 +72,7 @@ version = "0.3.1"
 optional = true
 
 [dependencies.terminal_size]
-version = "0.2.1"
+version = "0.1.17"
 optional = true
 
 [dependencies.unicode-linebreak]
