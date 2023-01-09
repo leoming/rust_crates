@@ -15,8 +15,7 @@ bytes = "1.1"
 cbindgen = "0.20"
 cc = "1.0.25"
 cfg-if = "1"
-chrono-03 = { package = "chrono", version = "0.3" }
-chrono-04 = { package = "chrono", version = "0.4" }
+chrono = "0.4"
 com_logger = "0.1"
 crc32fast = "1.2"
 crossbeam-utils = "0.8"

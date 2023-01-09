@@ -435,7 +435,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f346b6890a0dfa7266974910e7df2d5088120dd54721b9b0e5aae1ae5e05715"
 dependencies = [
  "cargo-lock",
- "chrono 0.4.19",
+ "chrono",
 ]
 
 [[package]]
@@ -552,16 +552,6 @@ name = "chromeos-dbus-bindings"
 version = "0.25.52"
 dependencies = [
  "which 4.3.0",
-]
-
-[[package]]
-name = "chrono"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "158b0bd7d75cbb6bf9c25967a48a2e9f77da95876b858eadfabaa99cd069de6e"
-dependencies = [
- "num 0.1.42",
- "time 0.1.43",
 ]
 
 [[package]]
@@ -963,7 +953,7 @@ name = "crosh"
 version = "0.24.52"
 dependencies = [
  "bitflags",
- "chrono 0.4.19",
+ "chrono",
  "dbus 0.9.5",
  "getopts",
  "lazy_static",
@@ -1047,8 +1037,7 @@ dependencies = [
  "cbindgen",
  "cc",
  "cfg-if",
- "chrono 0.3.0",
- "chrono 0.4.19",
+ "chrono",
  "com_logger",
  "crc32fast",
  "crossbeam-utils",
@@ -1075,7 +1064,7 @@ dependencies = [
  "merge",
  "mio 0.7.14",
  "nom 7.1.1",
- "num 0.2.1",
+ "num",
  "num-traits",
  "once_cell",
  "paste 1.0.4",
@@ -1685,7 +1674,7 @@ name = "flashrom_tester"
 version = "1.6.0"
 dependencies = [
  "built",
- "chrono 0.4.19",
+ "chrono",
  "clap 2.33.3",
  "libc",
  "log",
@@ -1755,7 +1744,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bb65943183b6b3cbf00f64c181e8178217e30194381b150e4f87ec59864c803"
 dependencies = [
  "lazy_static",
- "num 0.2.1",
+ "num",
 ]
 
 [[package]]
@@ -2561,7 +2550,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4e00ad2de771fc4988af88b02cbd618c08c17920208c35c4bbfe67ccfab31eb"
 dependencies = [
- "chrono 0.4.19",
+ "chrono",
  "derive-getters",
  "thiserror",
  "xml-rs",
@@ -2585,7 +2574,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bindgen 0.59.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.19",
+ "chrono",
  "clap 3.2.22",
  "env_logger 0.9.0",
  "glob",
@@ -2701,7 +2690,7 @@ dependencies = [
  "anyhow",
  "assert_matches",
  "base64 0.13.0",
- "chrono 0.4.19",
+ "chrono",
  "flexbuffers",
  "getopts",
  "libc",
@@ -2871,7 +2860,7 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 name = "memd"
 version = "0.1.0"
 dependencies = [
- "chrono 0.4.19",
+ "chrono",
  "dbus 0.6.5",
  "env_logger 0.9.0",
  "libc",
@@ -3150,17 +3139,6 @@ dependencies = [
 
 [[package]]
 name = "num"
-version = "0.1.42"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4703ad64153382334aa8db57c637364c322d3372e097840c72000dabdcf6156e"
-dependencies = [
- "num-integer",
- "num-iter",
- "num-traits",
-]
-
-[[package]]
-name = "num"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8536030f9fea7127f841b45bb6243b27255787fb4eb83958aa1ef9d2fdc0c36"
@@ -3380,7 +3358,7 @@ name = "os_install_service"
 version = "1.0.0"
 dependencies = [
  "anyhow",
- "chrono 0.4.19",
+ "chrono",
  "crossbeam-channel",
  "dbus 0.8.4",
  "lazy_static",
@@ -3555,7 +3533,7 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 name = "pinned_crates"
 version = "0.0.1"
 dependencies = [
- "chrono 0.4.19",
+ "chrono",
  "miniz_oxide 0.4.4",
 ]
 
@@ -4897,7 +4875,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af95cb8a5f79db5b2af2a46f44da7594b5adbcbb65cbf87b8da0959bfdd82460"
 dependencies = [
  "atty",
- "chrono 0.4.19",
+ "chrono",
  "log",
  "termcolor",
  "thread_local",
@@ -5275,7 +5253,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ce51b50006056f590c9b7c3808c3bd70f0d1101666629713866c227d6e58d39"
 dependencies = [
  "ascii",
- "chrono 0.4.19",
+ "chrono",
  "chunked_transfer",
  "log",
  "url",
@@ -6105,7 +6083,7 @@ version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "757a458f9bfab0542c11feed99bd492cbe23add50515bd8eecf8c6973673d32d"
 dependencies = [
- "chrono 0.4.19",
+ "chrono",
  "log",
  "serde",
  "thiserror",
